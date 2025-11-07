@@ -83,8 +83,9 @@ add_action('init', function () {
 /**
  * Re-geocode job when saving in admin
  */
-add_action('save_post_pm_job', function($job_id, $post, $update){
+add_action('save_post', function($job_id, $post, $update){
 
+    if ($post->post_type !== 'pm_job') return;
     if (wp_is_post_revision($job_id)) return;
 
     $current = get_post_meta($job_id, 'current_postcode', true);
