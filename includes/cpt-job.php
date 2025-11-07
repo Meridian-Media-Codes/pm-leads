@@ -2,6 +2,7 @@
 if ( ! defined('ABSPATH') ) exit;
 
 function pm_leads_register_cpt_job() {
+
     $labels = [
         'name'               => __('Jobs', 'pm-leads'),
         'singular_name'      => __('Job', 'pm-leads'),
@@ -20,7 +21,8 @@ function pm_leads_register_cpt_job() {
         'labels'             => $labels,
         'public'             => false,
         'show_ui'            => true,
-        'show_in_menu'       => false,
+        'show_in_menu'       => true,              // ✅ NOW visible in menu
+        'menu_icon'          => 'dashicons-clipboard',
         'capability_type'    => 'post',
         'map_meta_cap'       => true,
         'hierarchical'       => false,
@@ -31,11 +33,12 @@ function pm_leads_register_cpt_job() {
 
     register_post_type('pm_job', $args);
 
-    // Optional taxonomy for statuses
+    // Job Status taxonomy
     $tx_labels = [
         'name'          => __('Job Statuses', 'pm-leads'),
         'singular_name' => __('Job Status', 'pm-leads'),
     ];
+
     register_taxonomy('pm_job_status', ['pm_job'], [
         'labels'       => $tx_labels,
         'public'       => false,
@@ -44,5 +47,24 @@ function pm_leads_register_cpt_job() {
         'hierarchical' => false,
     ]);
 }
-
 add_action('init', 'pm_leads_register_cpt_job');
+
+/*
+ * ✅ Make title clickable (opens post editor)
+ */
+add_filter('post_type_link', function ($link, $post) {
+    if ($post->post_type === 'pm_job') {
+        return admin_url('post.php?post=' . $post->ID . '&action=edit');
+    }
+    return $link;
+}, 10, 2);
+
+/*
+ * ✅ Ensure the title column is kept
+ */
+add_filter('manage_pm_job_posts_columns', function ($columns) {
+    if (!isset($columns['title'])) {
+        $columns = ['title' => __('Job', 'pm-leads')] + $columns;
+    }
+    return $columns;
+});
