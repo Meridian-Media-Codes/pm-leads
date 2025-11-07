@@ -65,3 +65,5 @@ add_action('init', function () {
     wp_safe_redirect($redirect);
     exit;
 });
+
+

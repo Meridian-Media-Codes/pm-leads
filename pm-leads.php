@@ -27,6 +27,7 @@ require_once PM_LEADS_DIR . 'includes/geo.php';
 require_once PM_LEADS_DIR . 'public/dashboard.php';
 require_once PM_LEADS_DIR . 'includes/credits.php';
 require_once PM_LEADS_DIR . 'public/actions.php';
+require_once PM_LEADS_PATH . 'includes/integrations/fluentforms.php';
 
 register_activation_hook(__FILE__, function () {
     pm_leads_register_role();
