@@ -340,4 +340,28 @@ function pm_leads_render_jobs() {
     echo '</tbody></table></div>';
 }
 
+/**
+ * Settings page
+ */
+function pm_leads_render_settings() {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    echo '<div class="wrap"><h1>Settings</h1>';
+
+    if (!function_exists('settings_fields')) {
+        echo '<p>Settings API not available.</p></div>';
+        return;
+    }
+
+    echo '<form method="post" action="options.php">';
+
+    settings_fields('pm_leads_options_group');
+    do_settings_sections('pm_leads_settings');
+
+    submit_button();
+    echo '</form></div>';
+}
+
 
