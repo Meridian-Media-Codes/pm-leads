@@ -54,37 +54,49 @@ function pm_leads_render_vendors() {
 
 function pm_leads_render_jobs() {
     if (! current_user_can('manage_options')) return;
+
     $jobs = get_posts([
-        'post_type' => 'pm_job',
+        'post_type'      => 'pm_job',
         'posts_per_page' => 50,
-        'post_status' => 'any',
+        'post_status'    => 'any',
     ]);
+
     echo '<div class="wrap"><h1>Jobs</h1>';
     echo '<table class="widefat striped"><thead><tr>';
     echo '<th>ID</th><th>From</th><th>To</th><th>Bedrooms</th><th>Status</th><th>Purchases</th>';
     echo '</tr></thead><tbody>';
+
     if ($jobs) {
         foreach ($jobs as $j) {
-            $from = get_post_meta($j->ID, 'current_postcode', true);
-            $to = get_post_meta($j->ID, 'new_postcode', true);
-            $beds = get_post_meta($j->ID, 'bedrooms_new', true);
+
+            $edit_url  = admin_url("post.php?post={$j->ID}&action=edit");
+
+            $from      = get_post_meta($j->ID, 'current_postcode', true);
+            $to        = get_post_meta($j->ID, 'new_postcode', true);
+            $beds      = get_post_meta($j->ID, 'bedrooms_new', true);
             $purchases = get_post_meta($j->ID, 'purchase_count', true);
+
             $status_terms = wp_get_post_terms($j->ID, 'pm_job_status', ['fields' => 'names']);
-            $status = $status_terms ? implode(', ', $status_terms) : 'available';
+            $status       = $status_terms ? implode(', ', $status_terms) : 'available';
+
             echo '<tr>';
-            echo '<td>#' . intval($j->ID) . '</td>';
-            echo '<td>' . esc_html($from) . '</td>';
-            echo '<td>' . esc_html($to) . '</td>';
+
+            echo '<td><a href="' . esc_url($edit_url) . '">#' . intval($j->ID) . '</a></td>';
+            echo '<td><a href="' . esc_url($edit_url) . '">' . esc_html($from) . '</a></td>';
+            echo '<td><a href="' . esc_url($edit_url) . '">' . esc_html($to) . '</a></td>';
             echo '<td>' . esc_html($beds) . '</td>';
             echo '<td>' . esc_html($status) . '</td>';
             echo '<td>' . esc_html($purchases !== '' ? intval($purchases) : 0) . '</td>';
+
             echo '</tr>';
         }
     } else {
         echo '<tr><td colspan="6">No jobs yet.</td></tr>';
     }
+
     echo '</tbody></table></div>';
 }
+
 
 function pm_leads_render_settings() {
     if (! current_user_can('manage_options')) return;
