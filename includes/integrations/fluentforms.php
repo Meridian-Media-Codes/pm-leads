@@ -1,5 +1,10 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+define( 'PM_LEADS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'PM_LEADS_URL', plugin_dir_url( __FILE__ ) );
+
 
 add_action('fluentform_submission_inserted', function ($entryId, $formData) {
 
