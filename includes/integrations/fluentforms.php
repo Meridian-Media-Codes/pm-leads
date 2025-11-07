@@ -2,16 +2,19 @@
 
 add_action('fluentform_submission_inserted', function ($entryId, $formData) {
 
-
     error_log('Fluent handler running');
     error_log(print_r($formData, true));
 
+    $target_form = 3; // Your Request Quote form ID
 
+    // Lookup the form ID from DB
+    $entry = wpFluent()->table('ff_submissions')->find($entryId);
 
-    $target_form = 3; // ID of your Request Quote form
-    if (intval($formData['form_id']) !== $target_form) {
+    if (!$entry || intval($entry->form_id) !== $target_form) {
+        error_log('Wrong form ID: ' . ($entry->form_id ?? 'none'));
         return;
     }
+
 
     // Map fields
     $current  = sanitize_text_field($formData['current_postcode'] ?? '');
