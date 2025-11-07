@@ -1,6 +1,6 @@
 <?php
-if (!defined('ABSPATH')) exit;
 
+if (!defined('ABSPATH')) exit;
 
 /**
  * Geocode a UK postcode using Google Maps API
@@ -33,6 +33,12 @@ function pm_geocode_postcode($postcode) {
         'lng' => floatval($loc['lng']),
     ];
 }
+
+/* ✅ This must be OUTSIDE pm_geocode_postcode() */
+function pm_leads_geocode($postcode) {
+    return pm_geocode_postcode($postcode);
+}
+
 
 
 /**
