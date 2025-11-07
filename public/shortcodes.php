@@ -40,15 +40,18 @@ function pm_leads_form_shortcode() {
 }
 add_shortcode('pm_leads_form', 'pm_leads_form_shortcode');
 
-// [pm_vendor_dashboard] placeholder for future
+// [pm_vendor_dashboard]
 function pm_vendor_dashboard_shortcode() {
 
+    // Must be logged in
     if (!is_user_logged_in()) {
         return '<p>Please log in to view your vendor dashboard.</p>';
     }
 
     $user = wp_get_current_user();
-    if (!in_array('pm_vendor', (array)$user->roles, true)) {
+
+    // Allow admins to view the dashboard
+    if (!in_array('pm_vendor', (array)$user->roles, true) && !current_user_can('administrator')) {
         return '<p>You must be a vendor to view this page.</p>';
     }
 
