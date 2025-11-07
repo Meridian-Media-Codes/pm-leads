@@ -7,12 +7,18 @@ add_action('init', function () {
 
     $current = isset($_POST['current_postcode']) ? sanitize_text_field($_POST['current_postcode']) : '';
     $new     = isset($_POST['new_postcode']) ? sanitize_text_field($_POST['new_postcode']) : '';
+
     $beds_n  = isset($_POST['bedrooms_new']) ? absint($_POST['bedrooms_new']) : 0;
     $beds_c  = isset($_POST['bedrooms_current']) ? absint($_POST['bedrooms_current']) : 0;
+
     $email   = isset($_POST['customer_email']) ? sanitize_email($_POST['customer_email']) : '';
     $msg     = isset($_POST['customer_message']) ? sanitize_textarea_field($_POST['customer_message']) : '';
 
-    if (!$current || !$new || !$beds_n || !$beds_c || !$email) {
+    $name    = isset($_POST['customer_name']) ? sanitize_text_field($_POST['customer_name']) : '';
+    $addr_current = isset($_POST['current_address']) ? sanitize_text_field($_POST['current_address']) : '';
+    $addr_new     = isset($_POST['new_address']) ? sanitize_text_field($_POST['new_address']) : '';
+
+    if (!$current || !$new || !$email) {
         wp_die(__('Missing required fields', 'pm-leads'));
     }
 
@@ -21,7 +27,7 @@ add_action('init', function () {
     $job_id = wp_insert_post([
         'post_type'   => 'pm_job',
         'post_title'  => $title,
-        'post_status' => 'publish', // available
+        'post_status' => 'publish',
     ]);
     if (is_wp_error($job_id) || ! $job_id) {
         wp_die(__('Could not create job', 'pm-leads'));
@@ -29,16 +35,23 @@ add_action('init', function () {
 
     update_post_meta($job_id, 'current_postcode', $current);
     pm_job_geocode($job_id, $current);
+
     update_post_meta($job_id, 'new_postcode', $new);
     update_post_meta($job_id, 'bedrooms_new', $beds_n);
     update_post_meta($job_id, 'bedrooms_current', $beds_c);
+
+    update_post_meta($job_id, 'customer_name', $name);
     update_post_meta($job_id, 'customer_email', $email);
     update_post_meta($job_id, 'customer_message', $msg);
+
+    update_post_meta($job_id, 'current_address', $addr_current);
+    update_post_meta($job_id, 'new_address', $addr_new);
+
     update_post_meta($job_id, 'purchase_count', 0);
 
     do_action('pm_leads_job_created', $job_id);
 
-    // Assign status term "available" if present or create it once
+    // Assign "available" status
     $term = term_exists('available', 'pm_job_status');
     if (! $term) {
         $term = wp_insert_term('available', 'pm_job_status');
@@ -47,8 +60,7 @@ add_action('init', function () {
         wp_set_post_terms($job_id, [$term['term_id']], 'pm_job_status', false);
     }
 
-    // TODO: create hidden WooCommerce product and notify vendors
-    // Redirect to a thanks page or back
+    // Redirect
     $redirect = home_url('/thank-you/');
     wp_safe_redirect($redirect);
     exit;
