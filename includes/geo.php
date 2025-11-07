@@ -54,20 +54,33 @@ function pm_vendor_maybe_geocode($user_id, $postcode) {
  * - If $prefix is provided (e.g. 'pm_job_from' or 'pm_job_to'), also write to those keys.
  */
 function pm_job_geocode($job_id, $postcode, $prefix = null) {
-
     $coords = pm_geocode_postcode($postcode);
-    if (!$coords) return;
+    if (!$coords) {
+        error_log("PM GEO: no coords for job {$job_id} / " . $postcode);
+        return;
+    }
 
-    // Legacy fields (for backward compatibility)
+    // Always maintain legacy keys
     update_post_meta($job_id, 'pm_job_lat', $coords['lat']);
     update_post_meta($job_id, 'pm_job_lng', $coords['lng']);
 
-    // New namespaced keys
+    // Optional namespaced keys
     if ($prefix) {
-        update_post_meta($job_id, "{$prefix}_lat", $coords['lat']);
-        update_post_meta($job_id, "{$prefix}_lng", $coords['lng']);
+        $lat_key = $prefix . '_lat';
+        $lng_key = $prefix . '_lng';
+
+        update_post_meta($job_id, $lat_key, $coords['lat']);
+        update_post_meta($job_id, $lng_key, $coords['lng']);
+
+        // DEBUG: read back to confirm
+        $lat_now = get_post_meta($job_id, $lat_key, true);
+        $lng_now = get_post_meta($job_id, $lng_key, true);
+        error_log("PM GEO: wrote {$lat_key}={$lat_now}, {$lng_key}={$lng_now} for job {$job_id}");
+    } else {
+        error_log("PM GEO: no prefix provided for job {$job_id}");
     }
 }
+
 
 
 /**
