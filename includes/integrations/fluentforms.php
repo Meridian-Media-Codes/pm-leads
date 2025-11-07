@@ -5,16 +5,11 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
     error_log('Fluent handler running');
     error_log(print_r($formData, true));
 
-    $target_form = 3; // Your Request Quote form ID
-
-    // Lookup the form ID from DB
-    $entry = wpFluent()->table('ff_submissions')->find($entryId);
-
-    if (!$entry || intval($entry->form_id) !== $target_form) {
-        error_log('Wrong form ID: ' . ($entry->form_id ?? 'none'));
+    // Only run if this looks like your request form
+    if (empty($formData['current_postcode']) || empty($formData['new_postcode'])) {
+        error_log('Missing postcode fields – probably NOT our target form');
         return;
     }
-
 
     // Map fields
     $current  = sanitize_text_field($formData['current_postcode'] ?? '');
