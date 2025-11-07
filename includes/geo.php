@@ -54,21 +54,19 @@ function pm_vendor_maybe_geocode($user_id, $postcode) {
  * - If $prefix is provided (e.g. 'pm_job_from' or 'pm_job_to'), also write to those keys.
  */
 function pm_job_geocode($job_id, $postcode, $prefix = null) {
-
     $coords = pm_geocode_postcode($postcode);
     if (!$coords) return;
 
-    // Legacy fields (for backward compatibility)
+    // Always maintain legacy keys so nothing breaks
     update_post_meta($job_id, 'pm_job_lat', $coords['lat']);
     update_post_meta($job_id, 'pm_job_lng', $coords['lng']);
 
-    // New namespaced keys
+    // Optional namespaced keys for origin/destination
     if ($prefix) {
-        update_post_meta($job_id, "{$prefix}_lat", $coords['lat']);
-        update_post_meta($job_id, "{$prefix}_lng", $coords['lng']);
+        update_post_meta($job_id, $prefix . '_lat', $coords['lat']);
+        update_post_meta($job_id, $prefix . '_lng', $coords['lng']);
     }
 }
-
 
 /**
  * Calculate distance (Haversine) in miles

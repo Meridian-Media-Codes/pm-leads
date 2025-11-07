@@ -52,6 +52,10 @@ add_action('init', function () {
 
     update_post_meta($job_id, 'purchase_count',   0);
 
+    // Force re-geocode after saving
+    $current = get_post_meta($job_id, 'current_postcode', true);
+    $new     = get_post_meta($job_id, 'new_postcode', true);
+
     /**
      * ✅ GEO (both origin + destination)
      */
