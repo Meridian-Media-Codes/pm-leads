@@ -55,8 +55,9 @@ add_action('init', function () {
     /**
      * ✅ GEO (both origin + destination)
      */
-    pm_job_geocode($job_id, $current);
-    pm_job_geocode($job_id, $new);
+    pm_job_geocode($job_id, $current, 'pm_job_from');
+    pm_job_geocode($job_id, $new,     'pm_job_to');
+
 
     do_action('pm_leads_job_created', $job_id);
 
