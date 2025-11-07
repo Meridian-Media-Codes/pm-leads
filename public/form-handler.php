@@ -79,3 +79,19 @@ add_action('init', function () {
     wp_safe_redirect($redirect);
     exit;
 });
+
+/**
+ * Re-geocode job when saving in admin
+ */
+add_action('save_post_pm_job', function($job_id, $post, $update){
+
+    if (wp_is_post_revision($job_id)) return;
+
+    $current = get_post_meta($job_id, 'current_postcode', true);
+    $new     = get_post_meta($job_id, 'new_postcode', true);
+
+    if ($current) pm_job_geocode($job_id, $current, 'pm_job_from');
+    if ($new)     pm_job_geocode($job_id, $new,     'pm_job_to');
+
+}, 10, 3);
+
