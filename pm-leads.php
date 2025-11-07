@@ -28,6 +28,7 @@ require_once PM_LEADS_DIR . 'public/dashboard.php';
 require_once PM_LEADS_DIR . 'includes/credits.php';
 require_once PM_LEADS_DIR . 'public/actions.php';
 require_once PM_LEADS_DIR . 'includes/integrations/fluentforms.php';
+require_once PM_LEADS_DIR . 'admin/job-meta.php';
 
 register_activation_hook(__FILE__, function () {
     pm_leads_register_role();
