@@ -2,6 +2,12 @@
 
 add_action('fluentform_submission_inserted', function ($entryId, $formData) {
 
+
+    error_log('Fluent handler running');
+    error_log(print_r($formData, true));
+
+
+
     $target_form = 3; // ID of your Request Quote form
     if (intval($formData['form_id']) !== $target_form) {
         return;
