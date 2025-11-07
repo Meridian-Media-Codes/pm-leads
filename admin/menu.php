@@ -231,6 +231,113 @@ function pm_leads_render_vendors() {
 
 /* JOBS + SETTINGS unchanged from your version */
 
-function pm_leads_render_jobs() { /* UNCHANGED */ }
-function pm_leads_render_settings() { /* UNCHANGED */ }
+function pm_leads_render_jobs() {
+    if (!current_user_can('manage_options')) return;
+
+    // Save handler for single job view
+    if (isset($_POST['pm_job_nonce']) && wp_verify_nonce($_POST['pm_job_nonce'], 'pm_job_save')) {
+        $job_id = absint($_POST['job_id'] ?? 0);
+        if ($job_id) {
+            $fields = [
+                'customer_name','customer_email','customer_phone','customer_message',
+                'current_postcode','current_address','bedrooms_current',
+                'new_postcode','new_address','bedrooms_new','purchase_count'
+            ];
+            foreach ($fields as $key) {
+                if (isset($_POST[$key])) {
+                    update_post_meta($job_id, $key, sanitize_text_field($_POST[$key]));
+                }
+            }
+            echo '<div class="updated notice"><p>Job updated.</p></div>';
+        }
+    }
+
+    // Single job view
+    if (!empty($_GET['job_id'])) {
+        $job_id = absint($_GET['job_id']);
+        $job = get_post($job_id);
+        if (!$job || $job->post_type !== 'pm_job') {
+            echo '<div class="wrap"><h1>Job not found</h1></div>';
+            return;
+        }
+
+        $fields = [
+            'customer_name'     => 'Customer Name',
+            'customer_email'    => 'Customer Email',
+            'customer_phone'    => 'Customer Phone',
+            'customer_message'  => 'Customer Message',
+            'current_postcode'  => 'Current Postcode',
+            'current_address'   => 'Current Address',
+            'bedrooms_current'  => 'Current Bedrooms',
+            'new_postcode'      => 'New Postcode',
+            'new_address'       => 'New Address',
+            'bedrooms_new'      => 'New Bedrooms',
+            'purchase_count'    => 'Purchases'
+        ];
+        $vals = [];
+        foreach ($fields as $k => $label) {
+            $vals[$k] = get_post_meta($job_id, $k, true);
+        }
+
+        echo '<div class="wrap"><h1>Job #' . intval($job_id) . '</h1>';
+        echo '<form method="post">';
+        wp_nonce_field('pm_job_save', 'pm_job_nonce');
+        echo '<input type="hidden" name="job_id" value="' . intval($job_id) . '"/>';
+
+        echo '<table class="form-table"><tbody>';
+        foreach ($fields as $k => $label) {
+            $val = $vals[$k];
+            echo '<tr><th scope="row"><label>' . esc_html($label) . '</label></th><td>';
+            if ($k === 'customer_message' || $k === 'current_address' || $k === 'new_address') {
+                echo '<textarea name="' . esc_attr($k) . '" rows="3" class="large-text">' . esc_textarea($val) . '</textarea>';
+            } else {
+                $type = ($k === 'bedrooms_current' || $k === 'bedrooms_new' || $k === 'purchase_count') ? 'number' : 'text';
+                echo '<input type="' . $type . '" name="' . esc_attr($k) . '" value="' . esc_attr($val) . '" class="regular-text" />';
+            }
+            echo '</td></tr>';
+        }
+        echo '</tbody></table>';
+        echo '<p><button type="submit" class="button button-primary">Save</button> ';
+        echo '<a class="button" href="' . esc_url(admin_url('admin.php?page=pm-leads-jobs')) . '">Back to Jobs</a></p>';
+        echo '</form></div>';
+        return;
+    }
+
+    // List view
+    $jobs = get_posts([
+        'post_type'      => 'pm_job',
+        'posts_per_page' => 100,
+        'post_status'    => 'any',
+    ]);
+
+    echo '<div class="wrap"><h1>Jobs</h1>';
+    echo '<table class="widefat striped"><thead><tr>';
+    echo '<th>ID</th><th>From</th><th>To</th><th>Bedrooms</th><th>Status</th><th>Purchases</th>';
+    echo '</tr></thead><tbody>';
+
+    if ($jobs) {
+        foreach ($jobs as $j) {
+            $view_url  = admin_url('admin.php?page=pm-leads-jobs&job_id=' . intval($j->ID));
+            $from      = get_post_meta($j->ID, 'current_postcode', true);
+            $to        = get_post_meta($j->ID, 'new_postcode', true);
+            $beds      = get_post_meta($j->ID, 'bedrooms_new', true);
+            $purchases = get_post_meta($j->ID, 'purchase_count', true);
+            $status_terms = wp_get_post_terms($j->ID, 'pm_job_status', ['fields' => 'names']);
+            $status       = $status_terms ? implode(', ', $status_terms) : 'available';
+
+            echo '<tr>';
+            echo '<td><a href="' . esc_url($view_url) . '">#' . intval($j->ID) . '</a></td>';
+            echo '<td><a href="' . esc_url($view_url) . '">' . esc_html($from) . '</a></td>';
+            echo '<td><a href="' . esc_url($view_url) . '">' . esc_html($to) . '</a></td>';
+            echo '<td>' . esc_html($beds) . '</td>';
+            echo '<td>' . esc_html($status) . '</td>';
+            echo '<td>' . esc_html($purchases !== '' ? intval($purchases) : 0) . '</td>';
+            echo '</tr>';
+        }
+    } else {
+        echo '<tr><td colspan="6">No jobs yet.</td></tr>';
+    }
+    echo '</tbody></table></div>';
+}
+
 
