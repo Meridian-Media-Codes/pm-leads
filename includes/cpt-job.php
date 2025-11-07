@@ -18,18 +18,18 @@ function pm_leads_register_cpt_job() {
     ];
 
     $args = [
-        'labels'             => $labels,
-        'public'             => false,
-        'show_ui'            => true,
-        'show_in_menu'       => true,              // ✅ NOW visible in menu
-        'menu_icon'          => 'dashicons-clipboard',
-        'capability_type'    => 'post',
-        'map_meta_cap'       => true,
-        'hierarchical'       => false,
-        'supports'           => ['title', 'custom-fields'],
-        'has_archive'        => false,
-        'rewrite'            => false,
-    ];
+    'labels'             => $labels,
+    'public'             => false,
+    'show_ui'            => false,      // Hides job UI completely
+    'show_in_menu'       => false,
+    'capability_type'    => 'post',
+    'map_meta_cap'       => true,
+    'hierarchical'       => false,
+    'supports'           => ['title', 'custom-fields'],
+    'has_archive'        => false,
+    'rewrite'            => false,
+];
+
 
     register_post_type('pm_job', $args);
 
