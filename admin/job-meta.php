@@ -127,6 +127,9 @@ function pm_leads_job_meta_box_html($post) {
 /**
  * Save handler
  */
+/**
+ * Save handler
+ */
 add_action('save_post_pm_job', function ($post_id) {
 
     if (!isset($_POST['pm_job_meta_nonce']) || !wp_verify_nonce($_POST['pm_job_meta_nonce'], 'pm_job_meta_save'))
@@ -159,19 +162,22 @@ add_action('save_post_pm_job', function ($post_id) {
     }
 
     // ✅ Now update GEO based on saved values
-$current = get_post_meta($post_id, 'current_postcode', true);
-$new     = get_post_meta($post_id, 'new_postcode', true);
+    $current = get_post_meta($post_id, 'current_postcode', true);
+    $new     = get_post_meta($post_id, 'new_postcode', true);
 
-error_log("PM_SAVE: save_post_pm_job; current={$current}, new={$new}, post_id={$post_id}");
+    error_log("PM_SAVE: save_post_pm_job; current={$current}, new={$new}, post_id={$post_id}");
 
-if ($current) {
-    error_log("PM_SAVE: Calling pm_job_geocode for CURRENT");
-    pm_job_geocode($post_id, $current, 'pm_job_from');
-}
+    if ($current) {
+        error_log("PM_SAVE: Calling pm_job_geocode for CURRENT");
+        pm_job_geocode($post_id, $current, 'pm_job_from');
+    }
 
-if ($new) {
-    error_log("PM_SAVE: Calling pm_job_geocode for NEW");
-    pm_job_geocode($post_id, $new, 'pm_job_to');
-}
+    if ($new) {
+        error_log("PM_SAVE: Calling pm_job_geocode for NEW");
+        pm_job_geocode($post_id, $new, 'pm_job_to');
+    }
+
+}, 10);
+
 
 
