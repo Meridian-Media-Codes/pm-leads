@@ -28,6 +28,7 @@ add_action('init', function () {
     }
 
     update_post_meta($job_id, 'current_postcode', $current);
+    pm_job_geocode($job_id, $current);
     update_post_meta($job_id, 'new_postcode', $new);
     update_post_meta($job_id, 'bedrooms_new', $beds_n);
     update_post_meta($job_id, 'bedrooms_current', $beds_c);
