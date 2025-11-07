@@ -46,4 +46,5 @@ function pm_leads_create_wc_product_for_job($job_id) {
 
     // Link to job
     update_post_meta($job_id, '_pm_lead_product_id', $product_id);
+    update_post_meta($product_id, '_pm_job_id', $job_id);
 }
