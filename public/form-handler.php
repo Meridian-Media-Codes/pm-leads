@@ -35,6 +35,8 @@ add_action('init', function () {
     update_post_meta($job_id, 'customer_message', $msg);
     update_post_meta($job_id, 'purchase_count', 0);
 
+    do_action('pm_leads_job_created', $job_id);
+
     // Assign status term "available" if present or create it once
     $term = term_exists('available', 'pm_job_status');
     if (! $term) {
