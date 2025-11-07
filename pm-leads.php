@@ -23,6 +23,7 @@ require_once PM_LEADS_DIR . 'admin/menu.php';
 require_once PM_LEADS_DIR . 'public/shortcodes.php';
 require_once PM_LEADS_DIR . 'public/form-handler.php';
 require_once PM_LEADS_DIR . 'includes/woo-lead-product.php';
+require_once PM_LEADS_DIR . 'includes/geo.php';
 
 register_activation_hook(__FILE__, function () {
     pm_leads_register_role();
