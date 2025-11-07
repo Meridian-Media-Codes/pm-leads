@@ -139,3 +139,4 @@ function pm_vendor_dashboard_shortcode() {
     return ob_get_clean();
 }
 
+add_shortcode('pm_vendor_dashboard', 'pm_vendor_dashboard_shortcode');
