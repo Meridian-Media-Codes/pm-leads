@@ -524,6 +524,7 @@ function pm_leads_render_settings() {
     // Load content
 if ($tab === 'emails') {
     require_once __DIR__ . "/settings-emails.php";
+    pm_leads_render_email_settings();
     // settings-emails.php handles its own rendering
 } else {
     echo '<form method="post" action="options.php">';
