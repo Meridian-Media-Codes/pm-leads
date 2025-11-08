@@ -2,11 +2,17 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Get template array by key
+ * EMAIL HELPERS + TRIGGERS
+ * Centralised storage, merge tag replacement, and all send hooks.
  */
+
+/* ---------------------------------------------
+   Storage helpers
+--------------------------------------------- */
+
+/** Get template by key */
 function pm_leads_get_email_template($key) {
     $opts = get_option('pm_leads_options', []);
-
     return [
         'enabled' => !empty($opts["{$key}_enabled"]) ? 1 : 0,
         'subject' => $opts["{$key}_subject"] ?? '',
@@ -14,69 +20,65 @@ function pm_leads_get_email_template($key) {
     ];
 }
 
-/**
- * Merge tag replacement
- */
+/** Save template by key */
+function pm_leads_save_email_template($key, $data) {
+    $opts = get_option('pm_leads_options', []);
+    $opts["{$key}_enabled"] = !empty($data['enabled']) ? 1 : 0;
+    $opts["{$key}_subject"] = sanitize_text_field($data['subject'] ?? '');
+    $opts["{$key}_body"]    = wp_kses_post($data['body'] ?? '');
+    update_option('pm_leads_options', $opts);
+}
+
+/* ---------------------------------------------
+   Compose + send
+--------------------------------------------- */
+
+/** Merge tag replacement */
 function pm_leads_apply_merge_tags($text, $data = []) {
-
     if (!is_array($data)) $data = [];
-
     foreach ($data as $tag => $value) {
         $text = str_replace('{' . $tag . '}', $value, $text);
     }
-
     return $text;
 }
 
-/**
- * Return HTML mail type
- */
+/** Return HTML mail type for wp_mail */
 function pm_leads_mail_html_type() {
     return 'text/html';
 }
 
-/**
- * Send a template email
- *
- *  $key     → template key
- *  $to      → email address
- *  $data    → array for merge tags
- */
+/** Send a template email */
 function pm_leads_send_template($key, $to, $data = []) {
-
     $tpl = pm_leads_get_email_template($key);
-
-    if (!$tpl['enabled']) return false;
+    if (!$tpl['enabled'] || empty($to)) return false;
 
     $site = get_bloginfo('name');
     $defaults = [
-        'site_name' => $site,
-        'site_url'  => home_url(),
+        'site_name'     => $site,
+        'site_url'      => home_url(),
+        'dashboard_url' => admin_url('admin.php?page=pm-leads'),
     ];
     $data = array_merge($defaults, $data);
 
     $subject = pm_leads_apply_merge_tags($tpl['subject'], $data);
     $body    = pm_leads_apply_merge_tags($tpl['body'],    $data);
 
-    // Fallback if blank
     if (!$subject) $subject = $site;
     if (!$body)    $body    = ' ';
 
-    // ✅ Proper static callback
     add_filter('wp_mail_content_type', 'pm_leads_mail_html_type');
-
     $sent = wp_mail($to, $subject, wpautop($body));
-
     remove_filter('wp_mail_content_type', 'pm_leads_mail_html_type');
 
     return $sent;
 }
 
-/**
- * Build merge tag array from job + vendor + customer data
- */
-function pm_leads_build_job_tags($job_id, $vendor_id = 0) {
+/* ---------------------------------------------
+   Data shaping for merge tags
+--------------------------------------------- */
 
+/** Build merge tag array from job + optional vendor */
+function pm_leads_build_job_tags($job_id, $vendor_id = 0) {
     $data = [
         'job_id'            => $job_id,
         'customer_name'     => get_post_meta($job_id, 'customer_name', true),
@@ -95,112 +97,102 @@ function pm_leads_build_job_tags($job_id, $vendor_id = 0) {
         'purchase_count'    => get_post_meta($job_id, 'purchase_count', true),
     ];
 
+    // Optional geos if present
+    $data['job_from_lat'] = get_post_meta($job_id, 'pm_job_from_lat', true);
+    $data['job_from_lng'] = get_post_meta($job_id, 'pm_job_from_lng', true);
+    $data['job_to_lat']   = get_post_meta($job_id, 'pm_job_to_lat', true);
+    $data['job_to_lng']   = get_post_meta($job_id, 'pm_job_to_lng', true);
+
+    // Derived distances if helpers exist
+    if (!empty($data['job_from_lat']) && !empty($data['job_from_lng']) && !empty($data['job_to_lat']) && !empty($data['job_to_lng']) && function_exists('pm_leads_distance_mi')) {
+        $data['job_distance_miles'] = pm_leads_distance_mi($data['job_from_lat'], $data['job_from_lng'], $data['job_to_lat'], $data['job_to_lng']);
+    }
+
     if ($vendor_id) {
         $u = get_user_by('id', $vendor_id);
         if ($u) {
-            $data['vendor_name']         = $u->display_name;
-            $data['vendor_email']        = $u->user_email;
-            $data['vendor_company']      = get_user_meta($vendor_id, 'company_name', true);
-            $data['vendor_phone']        = get_user_meta($vendor_id, 'contact_number', true);
+            $data['vendor_name']          = $u->display_name;
+            $data['vendor_email']         = $u->user_email;
+            $data['vendor_company']       = get_user_meta($vendor_id, 'company_name', true);
+            $data['vendor_phone']         = get_user_meta($vendor_id, 'contact_number', true);
             $data['vendor_service_radius']= get_user_meta($vendor_id, 'service_radius', true);
-            $data['vendor_credits']      = get_user_meta($vendor_id, 'pm_credit_balance', true);
+            $data['vendor_credits']       = get_user_meta($vendor_id, 'pm_credit_balance', true);
+
+            // distance vendor → origin if possible
+            $v_lat = get_user_meta($vendor_id, 'pm_vendor_lat', true);
+            $v_lng = get_user_meta($vendor_id, 'pm_vendor_lng', true);
+            if ($v_lat && $v_lng && !empty($data['job_from_lat']) && !empty($data['job_from_lng']) && function_exists('pm_leads_distance_mi')) {
+                $data['distance_vendor_to_origin_miles'] = pm_leads_distance_mi($v_lat, $v_lng, $data['job_from_lat'], $data['job_from_lng']);
+            }
         }
+    }
+
+    // Purchases left if options helper exists
+    if (function_exists('pm_leads_opts')) {
+        $opts = pm_leads_opts();
+        $limit = isset($opts['purchase_limit']) ? (int)$opts['purchase_limit'] : 5;
+        $purchases = (int) ($data['purchase_count'] ?: 0);
+        $data['purchases']       = $purchases;
+        $data['purchase_limit']  = $limit;
+        $data['purchases_left']  = max(0, $limit - $purchases);
     }
 
     return $data;
 }
 
+/* ---------------------------------------------
+   Triggers
+--------------------------------------------- */
 
-
-/**
- * Lead Purchased → Vendor + Customer
- */
+/** Lead Purchased → Vendor + Customer (credits path) */
 add_action('pm_lead_purchased_with_credits', function($job_id, $vendor_id) {
-
     $data = pm_leads_build_job_tags($job_id, $vendor_id);
 
-    /* → Email vendor */
-    pm_leads_send_template(
-        'lead_purchased_vendor',
-        $data['vendor_email'],
-        $data
-    );
+    // Vendor
+    pm_leads_send_template('lead_purchased_vendor', $data['vendor_email'] ?? '', $data);
 
-    /* → Email customer */
+    // Customer
     if (!empty($data['customer_email'])) {
-        pm_leads_send_template(
-            'lead_purchased_customer',
-            $data['customer_email'],
-            $data
-        );
+        pm_leads_send_template('lead_purchased_customer', $data['customer_email'], $data);
     }
 }, 10, 2);
 
-
-
-/**
- * New Lead → Customer
- */
+/** New Lead → Customer */
 add_action('pm_lead_created', function ($job_id) {
-
     $data = pm_leads_build_job_tags($job_id, 0);
     $to   = $data['customer_email'] ?? '';
-
     if ($to) {
-        pm_leads_send_template(
-            'new_lead_customer',
-            $to,
-            $data
-        );
+        pm_leads_send_template('new_lead_customer', $to, $data);
     }
 });
 
-
-
-/**
- * New Lead → Vendors in range
- */
+/** New Lead → Vendors in range */
 add_action('pm_lead_created', function ($job_id) {
+    if (!function_exists('pm_leads_get_options')) return;
 
-    $opts = pm_leads_get_options();
+    $opts   = pm_leads_get_options();
     $radius = isset($opts['default_radius']) ? intval($opts['default_radius']) : 50;
 
-    // load job origin
     $from_lat = get_post_meta($job_id, 'pm_job_from_lat', true);
     $from_lng = get_post_meta($job_id, 'pm_job_from_lng', true);
-
-    if (!$from_lat || !$from_lng) return;
+    if (!$from_lat || !$from_lng || !function_exists('pm_leads_distance_mi')) return;
 
     $vendors = get_users(['role' => 'pm_vendor', 'fields' => 'ID']);
-
     foreach ($vendors as $vid) {
-
         $v_lat = get_user_meta($vid, 'pm_vendor_lat', true);
         $v_lng = get_user_meta($vid, 'pm_vendor_lng', true);
-
         if (!$v_lat || !$v_lng) continue;
 
         $dist = pm_leads_distance_mi($from_lat, $from_lng, $v_lat, $v_lng);
-
         if ($dist <= $radius) {
             $data = pm_leads_build_job_tags($job_id, $vid);
-
-            pm_leads_send_template(
-                'new_lead_vendors',
-                $data['vendor_email'],
-                $data
-            );
+            pm_leads_send_template('new_lead_vendors', $data['vendor_email'] ?? '', $data);
         }
     }
 });
 
-
-
-/**
- * Order complete → Credits Purchased
- */
+/** Woo order completed → Credits Purchased notice to vendor (top-ups) */
 add_action('woocommerce_order_status_completed', function ($order_id) {
-
     $order = wc_get_order($order_id);
     if (!$order) return;
 
@@ -208,35 +200,24 @@ add_action('woocommerce_order_status_completed', function ($order_id) {
     if (!$user_id) return;
 
     foreach ($order->get_items() as $item) {
+        $pid     = $item->get_product_id();
+        $credits = (int) get_post_meta($pid, '_pm_lead_credit_value', true);
+        if ($credits <= 0) continue;
 
-        $pid = $item->get_product_id();
-        $credits = intval(get_post_meta($pid, '_pm_lead_credit_value', true));
-
-        if ($credits > 0) {
-
-            $data = [
-                'vendor_email' => $order->get_billing_email(),
-                'vendor_name'  => $order->get_formatted_billing_full_name(),
-                'credits'      => $credits,
-                'job_id'       => '',
-            ];
-
-            pm_leads_send_template(
-                'credits_purchased_vendor',
-                $data['vendor_email'],
-                $data
-            );
-        }
+        $data = [
+            'vendor_email'       => $order->get_billing_email(),
+            'vendor_name'        => $order->get_formatted_billing_full_name(),
+            'credits_purchased'  => $credits * max(1, (int)$item->get_quantity()),
+            // Optional extras if you want to compute them elsewhere:
+            // 'credit_unit_price'   => $item->get_total() / max(1, (int)$item->get_quantity()),
+            // 'new_credit_balance'  => (string) get_user_meta($user_id, 'pm_credit_balance', true),
+        ];
+        pm_leads_send_template('credits_purchased_vendor', $data['vendor_email'], $data);
     }
 });
 
-
-
-/**
- * Vendor approved → Vendor
- */
+/** Vendor approved → Vendor */
 function pm_leads_mark_vendor_approved($vendor_id) {
-
     $user = get_user_by('id', $vendor_id);
     if (!$user) return;
 
@@ -244,40 +225,25 @@ function pm_leads_mark_vendor_approved($vendor_id) {
         'vendor_name'  => $user->display_name,
         'vendor_email' => $user->user_email,
     ];
-
-    pm_leads_send_template(
-        'vendor_approved_vendor',
-        $data['vendor_email'],
-        $data
-    );
+    pm_leads_send_template('vendor_approved_vendor', $data['vendor_email'], $data);
 }
 
-
-
-/**
- * Low credit warning
- */
-function pm_leads_maybe_warn_low_credits($vendor_id) {
-
-    $bal = intval(get_user_meta($vendor_id, 'pm_credit_balance', true));
-
-    if ($bal <= 2) {
-
-        $user = get_user_by('id', $vendor_id);
-        if (!$user) return;
-
-        $data = [
-            'vendor_name'    => $user->display_name,
-            'vendor_email'   => $user->user_email,
-            'vendor_credits' => $bal,
-        ];
-
-        pm_leads_send_template(
-            'low_credits_vendor',
-            $data['vendor_email'],
-            $data
-        );
-    }
-}
-
+/** Public hook so other places can fire it */
 add_action('pm_leads_vendor_approved', 'pm_leads_mark_vendor_approved', 10, 1);
+
+/** Low credits warning (call when balance changes) */
+function pm_leads_maybe_warn_low_credits($vendor_id) {
+    $bal = (int) get_user_meta($vendor_id, 'pm_credit_balance', true);
+    if ($bal > 2) return;
+
+    $user = get_user_by('id', $vendor_id);
+    if (!$user) return;
+
+    $data = [
+        'vendor_name'    => $user->display_name,
+        'vendor_email'   => $user->user_email,
+        'vendor_credits' => $bal,
+        'low_credit_threshold' => 2,
+    ];
+    pm_leads_send_template('low_credits_vendor', $data['vendor_email'], $data);
+}

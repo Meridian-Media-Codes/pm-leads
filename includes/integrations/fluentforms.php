@@ -59,5 +59,4 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
 
 }, 10, 2);
 
-error_log("PM_FF: bottom of handler reached, about to exit");
 

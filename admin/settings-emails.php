@@ -2,44 +2,21 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * EMAIL SETTINGS
+ * EMAIL SETTINGS UI
  * Admin → PM Leads → Settings → Emails
- * One tab per template, values saved in pm_leads_options
+ * Renders one tab per template. Values are saved in pm_leads_options.
+ *
+ * NOTE: Storage + sending helpers live in includes/email-helpers.php
+ * (pm_leads_get_email_template, pm_leads_save_email_template, etc.)
  */
-
-/* ---------------------------------------------
-   Helpers (get / save)
---------------------------------------------- */
-
-/** Get one template */
-function pm_leads_get_email_template($key) {
-    $opts = get_option('pm_leads_options', []);
-    return [
-        'enabled' => !empty($opts["{$key}_enabled"]) ? 1 : 0,
-        'subject' => $opts["{$key}_subject"] ?? '',
-        'body'    => $opts["{$key}_body"]    ?? '',
-    ];
-}
-
-/** Save one template */
-function pm_leads_save_email_template($key, $data) {
-    $opts = get_option('pm_leads_options', []);
-    $opts["{$key}_enabled"] = !empty($data['enabled']) ? 1 : 0;
-    $opts["{$key}_subject"] = sanitize_text_field($data['subject'] ?? '');
-    $opts["{$key}_body"]    = wp_kses_post($data['body'] ?? '');
-    update_option('pm_leads_options', $opts);
-}
 
 /* ---------------------------------------------
    Merge tag cheat-sheet
 --------------------------------------------- */
 
-/**
- * Return allowed merge tags for a given template key.
- * Tags are simple {tag_name} placeholders you’ll replace when sending the email.
- */
+/** Return allowed merge tags for a given template key */
 function pm_leads_allowed_merge_tags($key) {
-    // Common buckets
+    // Buckets
     $customer = [
         '{customer_name}', '{customer_email}', '{customer_phone}',
         '{current_postcode}', '{current_address}', '{bedrooms_current}',
@@ -66,7 +43,6 @@ function pm_leads_allowed_merge_tags($key) {
         '{credits_purchased}', '{credit_unit_price}', '{new_credit_balance}',
     ];
 
-    // Per-template selections
     switch ($key) {
         case 'new_lead_customer':
             return array_merge($customer, $site);
@@ -115,27 +91,26 @@ function pm_leads_render_merge_tag_help($key) {
 }
 
 /* ---------------------------------------------
-   Save Handler (one template at a time)
+   Save handler (one template at a time)
 --------------------------------------------- */
 add_action('admin_init', function () {
-
-    if (empty($_POST['pm_email_key'])) {
-        return;
-    }
+    if (empty($_POST['pm_email_key'])) return;
 
     $key = sanitize_key($_POST['pm_email_key']);
-
     if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], "pm_save_template_{$key}")) {
         return;
     }
 
-    pm_leads_save_email_template($key, [
-        'enabled' => isset($_POST['enabled']) ? 1 : 0,
-        'subject' => $_POST['subject'] ?? '',
-        'body'    => $_POST['body'] ?? '',
-    ]);
+    // Storage lives in includes/email-helpers.php
+    if (function_exists('pm_leads_save_email_template')) {
+        pm_leads_save_email_template($key, [
+            'enabled' => isset($_POST['enabled']) ? 1 : 0,
+            'subject' => $_POST['subject'] ?? '',
+            'body'    => $_POST['body'] ?? '',
+        ]);
+    }
 
-    // redirect back to same tab
+    // Redirect back to same subtab so the editor stays populated
     $target = add_query_arg([
         'page'      => 'pm-leads-settings',
         'tab'       => 'emails',
@@ -146,7 +121,6 @@ add_action('admin_init', function () {
     wp_safe_redirect($target);
     exit;
 });
-
 
 /* ---------------------------------------------
    Sub-tabs helper
@@ -166,7 +140,10 @@ function pm_leads_email_subtab_link($id, $label, $current) {
    Template editor (UI)
 --------------------------------------------- */
 function pm_leads_template_editor($key, $title) {
-    $tpl = pm_leads_get_email_template($key);
+    // Data provider lives in includes/email-helpers.php
+    $tpl = function_exists('pm_leads_get_email_template')
+        ? pm_leads_get_email_template($key)
+        : ['enabled'=>0,'subject'=>'','body'=>''];
 
     echo '<h3>' . esc_html($title) . '</h3>';
 
@@ -175,7 +152,7 @@ function pm_leads_template_editor($key, $title) {
 
     echo '<table class="form-table" style="max-width:880px;table-layout:fixed;">';
 
-    // Enabled
+    // Enable
     echo '<tr><th style="width:200px;"><label>Enable</label></th><td>';
     echo '<label><input type="checkbox" name="enabled" value="1" ' . checked($tpl['enabled'], 1, false) . '> Send this email</label>';
     echo '</td></tr>';
@@ -205,7 +182,6 @@ function pm_leads_template_editor($key, $title) {
 
     echo '</table>';
 
-    // Merge tag cheat-sheet
     pm_leads_render_merge_tag_help($key);
 
     echo '<p><button type="submit" class="button button-primary">Save template</button></p>';
@@ -217,7 +193,6 @@ function pm_leads_template_editor($key, $title) {
    Main renderer
 --------------------------------------------- */
 function pm_leads_render_email_settings() {
-    // Which inner tab?
     $allowed_tabs = [
         'new_lead_customer',
         'new_lead_vendors',
@@ -249,32 +224,19 @@ function pm_leads_render_email_settings() {
 
     switch ($sub) {
         case 'new_lead_customer':
-            pm_leads_template_editor('new_lead_customer', 'New Lead → Customer');
-            break;
-
+            pm_leads_template_editor('new_lead_customer', 'New Lead → Customer'); break;
         case 'new_lead_vendors':
-            pm_leads_template_editor('new_lead_vendors', 'New Lead → Vendors');
-            break;
-
+            pm_leads_template_editor('new_lead_vendors', 'New Lead → Vendors'); break;
         case 'lead_purchased_vendor':
-            pm_leads_template_editor('lead_purchased_vendor', 'Lead Purchased → Vendor');
-            break;
-
+            pm_leads_template_editor('lead_purchased_vendor', 'Lead Purchased → Vendor'); break;
         case 'lead_purchased_customer':
-            pm_leads_template_editor('lead_purchased_customer', 'Lead Purchased → Customer');
-            break;
-
+            pm_leads_template_editor('lead_purchased_customer', 'Lead Purchased → Customer'); break;
         case 'credits_purchased_vendor':
-            pm_leads_template_editor('credits_purchased_vendor', 'Credits Purchased → Vendor');
-            break;
-
+            pm_leads_template_editor('credits_purchased_vendor', 'Credits Purchased → Vendor'); break;
         case 'low_credits_vendor':
-            pm_leads_template_editor('low_credits_vendor', 'Low Credits → Vendor');
-            break;
-
+            pm_leads_template_editor('low_credits_vendor', 'Low Credits → Vendor'); break;
         case 'vendor_approved_vendor':
-            pm_leads_template_editor('vendor_approved_vendor', 'Vendor Approved → Vendor');
-            break;
+            pm_leads_template_editor('vendor_approved_vendor', 'Vendor Approved → Vendor'); break;
     }
 
     echo '</div></div>';
