@@ -5,13 +5,11 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
     error_log('Fluent handler running');
     error_log(print_r($formData, true));
 
-    // Only run if this looks like your request form
     if (empty($formData['current_postcode']) || empty($formData['new_postcode'])) {
         error_log('Missing postcode fields – probably NOT our target form');
         return;
     }
 
-    // Map fields
     $current  = sanitize_text_field($formData['current_postcode'] ?? '');
     $new      = sanitize_text_field($formData['new_postcode'] ?? '');
     $beds_n   = absint($formData['bedrooms_new'] ?? 0);
@@ -38,13 +36,13 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
     }
 
     update_post_meta($job_id, 'current_postcode', $current);
+    error_log("PM FF: geocode FROM");
     pm_job_geocode($job_id, $current, 'pm_job_from');
 
     update_post_meta($job_id, 'new_postcode', $new);
+    error_log("PM FF: geocode TO");
     pm_job_geocode($job_id, $new, 'pm_job_to');
 
-
-    update_post_meta($job_id, 'new_postcode', $new);
     update_post_meta($job_id, 'bedrooms_new', $beds_n);
     update_post_meta($job_id, 'bedrooms_current', $beds_c);
 
