@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 /**
  * EMAIL SETTINGS (UI only)
  * Appears under: Admin → PM Leads → Settings → Emails
- * Storage/helpers live in includes/email-helpers.php
+ * Storage/helpers live in includes/email-helpers.php (separate option).
  */
 
 /* ---------------------------------------------
@@ -53,7 +53,7 @@ function pm_leads_render_merge_tag_help($key) {
 }
 
 /* ---------------------------------------------
-   Save handler (fires on every admin request)
+   Save handler
 --------------------------------------------- */
 add_action('admin_init', function () {
     if (empty($_POST['pm_email_key'])) return;
@@ -63,7 +63,6 @@ add_action('admin_init', function () {
 
     if (!function_exists('pm_leads_save_email_template')) return;
 
-    // wp_editor() uses textarea_name => 'body', so read $_POST['body']
     pm_leads_save_email_template($key, [
         'enabled' => isset($_POST['enabled']) ? 1 : 0,
         'subject' => isset($_POST['subject']) ? wp_unslash($_POST['subject']) : '',
