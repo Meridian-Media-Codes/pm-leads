@@ -54,9 +54,13 @@ function pm_vendor_maybe_geocode($user_id, $postcode) {
  * - If $prefix is provided (e.g. 'pm_job_from' or 'pm_job_to'), also write to those keys.
  */
 function pm_job_geocode($job_id, $postcode, $prefix = null) {
+
+    error_log("PM_GEO: FUNCTION HIT | job_id={$job_id} | postcode={$postcode} | prefix={$prefix}");
+
     $coords = pm_geocode_postcode($postcode);
+
     if (!$coords) {
-        error_log("PM GEO: no coords for job {$job_id} / " . $postcode);
+        error_log("PM_GEO: NO COORDS RETURNED for {$postcode}");
         return;
     }
 
@@ -80,6 +84,7 @@ function pm_job_geocode($job_id, $postcode, $prefix = null) {
         error_log("PM GEO: no prefix provided for job {$job_id}");
     }
 }
+
 
 
 
