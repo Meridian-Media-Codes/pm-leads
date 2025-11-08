@@ -66,24 +66,6 @@ if (!function_exists('pm_leads_vendor_has_bought')) {
     }
 }
 
-/** Haversine (use existing if present) */
-if (!function_exists('pm_leads_distance_mi')) {
-    function pm_leads_distance_mi($lat1, $lng1, $lat2, $lng2) {
-        if ($lat1 === '' || $lng1 === '' || $lat2 === '' || $lng2 === '') return '';
-        $earth = 3958.8; // miles
-        $lat1 = deg2rad((float)$lat1);
-        $lat2 = deg2rad((float)$lat2);
-        $lng1 = deg2rad((float)$lng1);
-        $lng2 = deg2rad((float)$lng2);
-        $d = 2 * asin(
-            sqrt(
-                pow(sin(($lat1 - $lat2) / 2), 2) +
-                cos($lat1) * cos($lat2) * pow(sin(($lng1 - $lng2) / 2), 2)
-            )
-        );
-        return $earth * $d;
-    }
-}
 
 /* ---------------------------
  * Admin menu registration
