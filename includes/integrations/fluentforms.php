@@ -58,3 +58,6 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
     do_action('pm_leads_job_created', $job_id);
 
 }, 10, 2);
+
+error_log("PM_FF: bottom of handler reached, about to exit");
+
