@@ -69,7 +69,7 @@ add_action('admin_init', function () {
     pm_leads_save_email_template($key, [
         'enabled' => isset($_POST['enabled']) ? 1 : 0,
         'subject' => $_POST['subject'] ?? '',
-        'body'    => $_POST['body'] ?? '',
+        'body'    => ($_POST["pm_email_body_{$key}"] ?? ($_POST['body'] ?? '')),
     ]);
 
     // Redirect back to the same inner tab so the editor stays populated.
