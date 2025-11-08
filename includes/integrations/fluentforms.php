@@ -38,7 +38,11 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
     }
 
     update_post_meta($job_id, 'current_postcode', $current);
-    pm_job_geocode($job_id, $current);
+    pm_job_geocode($job_id, $current, 'pm_job_from');
+
+    update_post_meta($job_id, 'new_postcode', $new);
+    pm_job_geocode($job_id, $new, 'pm_job_to');
+
 
     update_post_meta($job_id, 'new_postcode', $new);
     update_post_meta($job_id, 'bedrooms_new', $beds_n);
