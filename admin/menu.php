@@ -522,17 +522,17 @@ function pm_leads_render_settings() {
     echo '</h2>';
 
     // Load content
-    if ($tab === 'emails') {
-        require_once __DIR__ . "/settings-emails.php";
-        pm_leads_render_email_settings();
-    } else {
-        echo '<form method="post" action="options.php">';
-        settings_fields('pm_leads_options_group');
-        do_settings_sections('pm_leads_settings');
-        submit_button();
-        echo '</form>';
-    }
-
-    echo '</div>';
+if ($tab === 'emails') {
+    require_once __DIR__ . "/settings-emails.php";
+    // settings-emails.php handles its own rendering
+} else {
+    echo '<form method="post" action="options.php">';
+    settings_fields('pm_leads_options_group');
+    do_settings_sections('pm_leads_settings');
+    submit_button();
+    echo '</form>';
 }
+
+echo '</div>';
+
 
