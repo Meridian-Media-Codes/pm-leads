@@ -134,3 +134,5 @@ function pm_get_nearby_vendors($lat, $lng, $radius) {
 
     return $nearby;
 }
+
+
