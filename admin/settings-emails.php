@@ -118,10 +118,16 @@ function pm_leads_render_merge_tag_help($key) {
    Save Handler (one template at a time)
 --------------------------------------------- */
 add_action('admin_init', function () {
-    if (empty($_POST['pm_email_key']) || empty($_POST['_wpnonce'])) return;
+
+    if (empty($_POST['pm_email_key'])) {
+        return;
+    }
 
     $key = sanitize_key($_POST['pm_email_key']);
-    if (!wp_verify_nonce($_POST['_wpnonce'], "pm_save_template_{$key}")) return;
+
+    if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], "pm_save_template_{$key}")) {
+        return;
+    }
 
     pm_leads_save_email_template($key, [
         'enabled' => isset($_POST['enabled']) ? 1 : 0,
@@ -129,10 +135,18 @@ add_action('admin_init', function () {
         'body'    => $_POST['body'] ?? '',
     ]);
 
-    add_action('admin_notices', function () {
-        echo '<div class="notice notice-success"><p>Email template saved.</p></div>';
-    });
+    // redirect back to same tab
+    $target = add_query_arg([
+        'page'      => 'pm-leads-settings',
+        'tab'       => 'emails',
+        'email_tab' => $key,
+        'saved'     => '1',
+    ], admin_url('admin.php'));
+
+    wp_safe_redirect($target);
+    exit;
 });
+
 
 /* ---------------------------------------------
    Sub-tabs helper

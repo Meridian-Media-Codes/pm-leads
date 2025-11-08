@@ -280,23 +280,4 @@ function pm_leads_maybe_warn_low_credits($vendor_id) {
     }
 }
 
-/**
- * Vendor approved → Vendor
- */
-function pm_leads_mark_vendor_approved($vendor_id) {
-
-    $user = get_user_by('id', $vendor_id);
-    if (!$user) return;
-
-    $data = [
-        'vendor_name'  => $user->display_name,
-        'vendor_email' => $user->user_email,
-    ];
-
-    pm_leads_send_template(
-        'vendor_approved_vendor',
-        $data['vendor_email'],
-        $data
-    );
-}
 add_action('pm_leads_vendor_approved', 'pm_leads_mark_vendor_approved', 10, 1);
