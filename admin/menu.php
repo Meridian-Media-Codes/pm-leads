@@ -313,7 +313,7 @@ function pm_leads_render_jobs() {
         echo '<div class="wrap"><h1>Job #'.intval($job_id).'</h1><form method="post">';
         wp_nonce_field('pm_job_save','pm_job_nonce');
         echo '<input type="hidden" name="job_id" value="'.intval($job_id).'" />';
-        echo '<table class="form-table'><tbody>';
+        echo '<table class="form-table"><tbody>';
 
         foreach ($fields as $k=>$label) {
             $val = $vals[$k];
