@@ -506,6 +506,7 @@ function pm_leads_render_jobs() {
  * Settings (admin)
  * --------------------------- */
 function pm_leads_render_settings() {
+
     if (!current_user_can('manage_options')) {
         return;
     }
@@ -521,23 +522,22 @@ function pm_leads_render_settings() {
         echo '<a href="?page=pm-leads-settings&tab=emails"  class="nav-tab ' . ($tab === 'emails'  ? 'nav-tab-active' : '') . '">Emails</a>';
     echo '</h2>';
 
-    // Load emails tab
     if ($tab === 'emails') {
 
-        // ✅ Load helpers first
-        require_once plugin_dir_path(__DIR__) . "includes/email-helpers.php";
+        // ✅ Load helpers
+        require_once dirname(__DIR__) . "/includes/email-helpers.php";
 
         // ✅ Load UI
         require_once __DIR__ . "/settings-emails.php";
 
     } else {
 
-        // Default general settings
         echo '<form method="post" action="options.php">';
         settings_fields('pm_leads_options_group');
         do_settings_sections('pm_leads_settings');
         submit_button();
         echo '</form>';
+
     }
 
     echo '</div>';
