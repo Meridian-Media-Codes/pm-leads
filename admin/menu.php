@@ -5,17 +5,19 @@ if (!defined('ABSPATH')) exit;
  * PM Leads – Admin Menus + Vendor Dashboard
  */
 
-
 /* -------------------------------------------------
-   Load helpers globally so saving works everywhere
-------------------------------------------------- */
-require_once plugin_dir_path(__DIR__) . 'includes/email-helpers.php';
+ * Always load email helpers + email settings (UI)
+ * so the admin_init save handler is registered
+ * before the page lifecycle reaches rendering.
+ * ------------------------------------------------- */
+if (is_admin()) {
+    // Helpers (storage + sending + triggers)
+    require_once plugin_dir_path(__DIR__) . 'includes/email-helpers.php';
+    // Settings UI (registers the admin_init save handler)
+    require_once __DIR__ . '/settings-emails.php';
+}
 
-
-/* ---------------------------
- * Small safe helpers
- * --------------------------- */
-
+/** Current vendor user ID or 0 */
 if (!function_exists('pm_leads_current_vendor_id')) {
     function pm_leads_current_vendor_id() {
         $uid = get_current_user_id();
@@ -26,25 +28,26 @@ if (!function_exists('pm_leads_current_vendor_id')) {
     }
 }
 
+/** Options helper with default limit=5 */
 if (!function_exists('pm_leads_opts')) {
     function pm_leads_opts() {
         $limit = 5;
         if (function_exists('pm_leads_get_options')) {
             $o = pm_leads_get_options();
-            if (isset($o['purchase_limit'])) {
-                $limit = max(1, (int)$o['purchase_limit']);
-            }
+            if (isset($o['purchase_limit'])) $limit = max(1, (int)$o['purchase_limit']);
         }
         return ['purchase_limit' => $limit];
     }
 }
 
+/** Get Woo product id linked to a job */
 if (!function_exists('pm_leads_get_job_product_id')) {
     function pm_leads_get_job_product_id($job_id) {
         return absint(get_post_meta($job_id, '_pm_wc_product_id', true));
     }
 }
 
+/** Purchase count */
 if (!function_exists('pm_leads_get_purchase_count')) {
     function pm_leads_get_purchase_count($job_id) {
         $v = get_post_meta($job_id, 'purchase_count', true);
@@ -52,6 +55,7 @@ if (!function_exists('pm_leads_get_purchase_count')) {
     }
 }
 
+/** Has vendor already bought? */
 if (!function_exists('pm_leads_vendor_has_bought')) {
     function pm_leads_vendor_has_bought($job_id, $vendor_id) {
         $buyers = get_post_meta($job_id, 'pm_purchased_by', true);
@@ -60,11 +64,9 @@ if (!function_exists('pm_leads_vendor_has_bought')) {
     }
 }
 
-
 /* ---------------------------
- * Admin menu
+ * Admin menu registration
  * --------------------------- */
-
 add_action('admin_menu', function () {
 
     add_menu_page(
@@ -80,50 +82,10 @@ add_action('admin_menu', function () {
     add_submenu_page('pm-leads', __('Dashboard','pm-leads'), __('Dashboard','pm-leads'), 'read', 'pm-leads', 'pm_leads_render_dashboard');
 
     if (current_user_can('manage_options')) {
-        add_submenu_page('pm-leads', __('Vendors','pm-leads'), __('Vendors','pm-leads'), 'manage_options','pm-leads-vendors','pm_leads_render_vendors');
-        add_submenu_page('pm-leads', __('Jobs','pm-leads'), __('Jobs','pm-leads'), 'manage_options','pm-leads-jobs', 'pm_leads_render_jobs');
-        add_submenu_page('pm-leads', __('Settings','pm-leads'), __('Settings','pm-leads'), 'manage_options','pm-leads-settings','pm_leads_render_settings');
+        add_submenu_page('pm-leads', __('Vendors','pm-leads'),   __('Vendors','pm-leads'),   'manage_options','pm-leads-vendors','pm_leads_render_vendors');
+        add_submenu_page('pm-leads', __('Jobs','pm-leads'),      __('Jobs','pm-leads'),      'manage_options','pm-leads-jobs',   'pm_leads_render_jobs');
+        add_submenu_page('pm-leads', __('Settings','pm-leads'),  __('Settings','pm-leads'),  'manage_options','pm-leads-settings','pm_leads_render_settings');
     }
-});
-
-
-/* -------------------------------------------------
-   GLOBAL EMAIL TEMPLATE SAVE HANDLER
-------------------------------------------------- */
-
-add_action('admin_init', function () {
-
-    if (empty($_POST['pm_email_key'])) {
-        return;
-    }
-
-    $key = sanitize_key($_POST['pm_email_key']);
-
-    if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], "pm_save_template_{$key}")) {
-        return;
-    }
-
-    if (!function_exists('pm_leads_save_email_template')) {
-        return;
-    }
-
-    $body = $_POST["pm_email_body_{$key}"] ?? ($_POST['body'] ?? '');
-
-    pm_leads_save_email_template($key, [
-        'enabled' => isset($_POST['enabled']) ? 1 : 0,
-        'subject' => $_POST['subject'] ?? '',
-        'body'    => $body,
-    ]);
-
-    $target = add_query_arg([
-        'page'      => 'pm-leads-settings',
-        'tab'       => 'emails',
-        'email_tab' => $key,
-        'saved'     => '1',
-    ], admin_url('admin.php'));
-
-    wp_safe_redirect($target);
-    exit;
 });
 
 /* ---------------------------
@@ -351,7 +313,7 @@ function pm_leads_render_jobs() {
         echo '<div class="wrap"><h1>Job #'.intval($job_id).'</h1><form method="post">';
         wp_nonce_field('pm_job_save','pm_job_nonce');
         echo '<input type="hidden" name="job_id" value="'.intval($job_id).'" />';
-        echo '<table class="form-table"><tbody>';
+        echo '<table class="form-table'><tbody>';
 
         foreach ($fields as $k=>$label) {
             $val = $vals[$k];
@@ -404,20 +366,18 @@ function pm_leads_render_jobs() {
  * Settings (admin)
  * --------------------------- */
 function pm_leads_render_settings() {
-
     if (!current_user_can('manage_options')) return;
 
     $tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general';
 
     echo '<div class="wrap"><h1>PM Leads Settings</h1>';
-
     echo '<h2 class="nav-tab-wrapper">';
     echo '<a href="?page=pm-leads-settings&tab=general" class="nav-tab '.($tab==='general'?'nav-tab-active':'').'">General</a>';
     echo '<a href="?page=pm-leads-settings&tab=emails"  class="nav-tab '.($tab==='emails' ?'nav-tab-active':'').'">Emails</a>';
     echo '</h2>';
 
     if ($tab === 'emails') {
-        require_once __DIR__ . '/settings-emails.php';
+        // File already loaded above; just render the UI.
         pm_leads_render_email_settings();
         echo '</div>';
         return;
