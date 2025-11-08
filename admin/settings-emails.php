@@ -2,127 +2,119 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Email Settings UI
- *
- * Appears as the "Emails" tab inside Settings.
- * All values stored under pm_leads_options.
+ * EMAIL SETTINGS — UI scaffold only
+ * Appears under: Admin > PM Leads > Settings > Emails
  */
 
-//
-// 1. Register email settings
-//
-add_action('admin_init', function () {
+function pm_leads_render_email_settings() {
 
-    // Register our settings group
-    register_setting('pm_leads_options_group', 'pm_leads_options');
-
-    // Add section
-    add_settings_section(
-        'pm_leads_email_section',
-        'Email Notifications',
-        function () {
-            echo '<p>Configure email templates sent for lead + vendor events.</p>';
-        },
-        'pm_leads_settings_emails'
-    );
-
-    // List of email templates
-    $emails = pm_leads_email_templates_index();
-
-    foreach ($emails as $key => $label) {
-
-        add_settings_field(
-            "pm_email_{$key}",
-            esc_html($label),
-            'pm_leads_render_email_template_field',
-            'pm_leads_settings_emails',
-            'pm_leads_email_section',
-            [
-                'key'   => $key,
-                'label' => $label
-            ]
-        );
-    }
-});
-
-
-//
-// 2. Email template helper index
-//
-function pm_leads_email_templates_index() {
-    return [
-        'newlead_vendor'     => 'New Lead → Vendors',
-        'newlead_customer'   => 'New Lead → Customer',
-        'purchase_vendor'    => 'Lead Purchased → Vendor',
-        'purchase_customer'  => 'Lead Purchased → Customer',
-        'credits_vendor'     => 'Credits Purchased → Vendor',
-        'low_credits_vendor' => 'Low Credits → Vendor',
-        'vendor_approved'    => 'Vendor Approved → Vendor',
+    // Which inner tab?
+    $allowed_tabs = [
+        'new_lead_customer',
+        'new_lead_vendors',
+        'lead_purchased_vendor',
+        'lead_purchased_customer',
+        'credits_purchased_vendor',
+        'low_credits_vendor',
+        'vendor_approved_vendor'
     ];
+
+    $sub = isset($_GET['email_tab']) ? sanitize_key($_GET['email_tab']) : 'new_lead_customer';
+    if (!in_array($sub, $allowed_tabs, true)) {
+        $sub = 'new_lead_customer';
+    }
+
+    echo '<div class="wrap pm-email-settings">';
+
+    echo '<h2>Email Templates</h2>';
+    echo '<p>Configure email templates sent to customers and vendors after different actions.</p>';
+
+    echo '<h2 class="nav-tab-wrapper" style="margin-top:20px;">';
+
+    pm_leads_email_subtab_link('new_lead_customer',       'New Lead → Customer',       $sub);
+    pm_leads_email_subtab_link('new_lead_vendors',        'New Lead → Vendors',        $sub);
+    pm_leads_email_subtab_link('lead_purchased_vendor',   'Lead Purchased → Vendor',   $sub);
+    pm_leads_email_subtab_link('lead_purchased_customer', 'Lead Purchased → Customer', $sub);
+    pm_leads_email_subtab_link('credits_purchased_vendor','Credits Purchased → Vendor',$sub);
+    pm_leads_email_subtab_link('low_credits_vendor',      'Low Credits → Vendor',      $sub);
+    pm_leads_email_subtab_link('vendor_approved_vendor',  'Vendor Approved → Vendor',  $sub);
+
+    echo '</h2>';
+
+    echo '<div style="padding:20px;background:#fff;border:1px solid #ddd;border-top:none;">';
+
+    switch ($sub) {
+
+        case 'new_lead_customer':
+            pm_leads_template_placeholder('New Lead → Customer');
+            break;
+
+        case 'new_lead_vendors':
+            pm_leads_template_placeholder('New Lead → Vendors');
+            break;
+
+        case 'lead_purchased_vendor':
+            pm_leads_template_placeholder('Lead Purchased → Vendor');
+            break;
+
+        case 'lead_purchased_customer':
+            pm_leads_template_placeholder('Lead Purchased → Customer');
+            break;
+
+        case 'credits_purchased_vendor':
+            pm_leads_template_placeholder('Credits Purchased → Vendor');
+            break;
+
+        case 'low_credits_vendor':
+            pm_leads_template_placeholder('Low Credits → Vendor');
+            break;
+
+        case 'vendor_approved_vendor':
+            pm_leads_template_placeholder('Vendor Approved → Vendor');
+            break;
+    }
+
+    echo '</div>'; // content box
+    echo '</div>'; // wrap
 }
 
-//
-// 3. Field renderer
-//
-function pm_leads_render_email_template_field($args) {
 
-    $opts = get_option('pm_leads_options', []);
-    $key  = $args['key'];
+/**
+ * Draw sub-tabs
+ */
+function pm_leads_email_subtab_link($id, $label, $current) {
 
-    $enabled = isset($opts["{$key}_enabled"]) ? intval($opts["{$key}_enabled"]) : 0;
-    $subject = isset($opts["{$key}_subject"]) ? $opts["{$key}_subject"] : '';
-    $body    = isset($opts["{$key}_body"])    ? $opts["{$key}_body"]    : '';
+    $url = add_query_arg([
+        'page'      => 'pm-leads-settings',
+        'tab'       => 'emails',
+        'email_tab' => $id
+    ], admin_url('admin.php'));
 
-    echo '<div style="padding:10px 0;">';
+    $class = 'nav-tab';
+    if ($current === $id) $class .= ' nav-tab-active';
 
-    // enabled
-    echo '<p><label><input type="checkbox" name="pm_leads_options[' . esc_attr($key) . '_enabled]" value="1" ' . checked($enabled, 1, false) . '> Enable</label></p>';
-
-    // subject
-    echo '<p><input type="text" class="regular-text" name="pm_leads_options[' . esc_attr($key) . '_subject]" placeholder="Subject" value="' . esc_attr($subject) . '"></p>';
-
-    // body
-    echo '<p><textarea name="pm_leads_options[' . esc_attr($key) . '_body]" rows="5" class="large-text" placeholder="Email message body">' . esc_textarea($body) . '</textarea></p>';
-
-    echo '<p><em>Available tags: {customer_name} {customer_email} {customer_phone} {current_postcode} {new_postcode} {purchase_count} {credits} etc</em></p>';
-
-    echo '<hr></div>';
+    echo '<a href="' . esc_url($url) . '" class="' . esc_attr($class) . '">' . esc_html($label) . '</a>';
 }
 
 
-//
-// 4. Add submenu tab
-//
-add_action('admin_menu', function () {
+/**
+ * Placeholder — will be replaced with editable fields later
+ */
+function pm_leads_template_placeholder($title) {
 
-    add_submenu_page(
-        'pm-leads',
-        'Email Settings',
-        'Email Settings',
-        'manage_options',
-        'pm-leads-settings-emails',
-        'pm_leads_render_emails_settings'
-    );
-});
+    echo '<h3>' . esc_html($title) . '</h3>';
+    echo '<p>Template editor coming next...</p>';
 
+    echo '<table class="form-table" style="max-width:800px;">';
+    echo '<tr>';
+    echo '<th><label>Subject</label></th>';
+    echo '<td><input type="text" class="regular-text" placeholder="Email subject…" disabled></td>';
+    echo '</tr>';
 
-//
-// 5. UI Page
-//
-function pm_leads_render_emails_settings() {
+    echo '<tr>';
+    echo '<th><label>Body</label></th>';
+    echo '<td><textarea rows="10" style="width:100%;" placeholder="Email body…" disabled></textarea></td>';
+    echo '</tr>';
 
-    ?>
-    <div class="wrap">
-        <h1>Email Settings</h1>
-
-        <form method="post" action="options.php">
-            <?php
-            settings_fields('pm_leads_options_group');
-            do_settings_sections('pm_leads_settings_emails');
-            submit_button();
-            ?>
-        </form>
-    </div>
-
-    <?php
+    echo '</table>';
 }
