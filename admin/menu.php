@@ -248,6 +248,17 @@ function pm_leads_render_jobs() {
                     update_post_meta($job_id, $key, sanitize_text_field($_POST[$key]));
                 }
             }
+             $current = sanitize_text_field($_POST['current_postcode'] ?? '');
+             $new     = sanitize_text_field($_POST['new_postcode'] ?? '');
+             error_log("PM_ADMIN_SAVE: job_id={$job_id}, current={$current}, new={$new}");
+
+        if ($current) {
+            pm_job_geocode($job_id, $current, 'pm_job_from');
+        }
+
+        if ($new) {
+            pm_job_geocode($job_id, $new, 'pm_job_to');
+        }
             echo '<div class="updated notice"><p>Job updated.</p></div>';
         }
     }
