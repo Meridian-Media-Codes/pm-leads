@@ -521,18 +521,24 @@ function pm_leads_render_settings() {
         echo '<a href="?page=pm-leads-settings&tab=emails"  class="nav-tab ' . ($tab === 'emails'  ? 'nav-tab-active' : '') . '">Emails</a>';
     echo '</h2>';
 
-    // Load content
-if ($tab === 'emails') {
-    require_once __DIR__ . "/settings-emails.php";
-    pm_leads_render_email_settings();
-    // settings-emails.php handles its own rendering
-} else {
-    echo '<form method="post" action="options.php">';
-    settings_fields('pm_leads_options_group');
-    do_settings_sections('pm_leads_settings');
-    submit_button();
-    echo '</form>';
-}
-echo '</div>';
-}
+    // Load emails tab
+    if ($tab === 'emails') {
 
+        // ✅ Load helpers first
+        require_once plugin_dir_path(__DIR__) . "includes/email-helpers.php";
+
+        // ✅ Load UI
+        require_once __DIR__ . "/settings-emails.php";
+
+    } else {
+
+        // Default general settings
+        echo '<form method="post" action="options.php">';
+        settings_fields('pm_leads_options_group');
+        do_settings_sections('pm_leads_settings');
+        submit_button();
+        echo '</form>';
+    }
+
+    echo '</div>';
+}
