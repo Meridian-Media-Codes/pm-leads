@@ -531,7 +531,7 @@ if ($tab === 'emails') {
     do_settings_sections('pm_leads_settings');
     submit_button();
     echo '</form>';
-}
+}}
 
 echo '</div>';
 
