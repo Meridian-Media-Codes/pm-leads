@@ -196,8 +196,13 @@ add_shortcode('pm_vendor_dashboard', function () {
         'invalid' => 'Invalid request.',
     ];
 
-    ob_start();
+    $credit_prices = get_option('pm_leads_credit_prices', [
+        'price_1'  => 2,
+        'price_5'  => 8,
+        'price_10' => 15,
+    ]);
 
+    ob_start();
     echo '<div class="pm-dashboard">';
     echo '<h2>Vendor Dashboard</h2>';
     echo '<p><strong>Credits:</strong> ' . intval($balance) . '</p>';
@@ -206,6 +211,31 @@ add_shortcode('pm_vendor_dashboard', function () {
         echo '<div class="notice" style="margin:10px 0;padding:10px;border:1px solid #ccd0d4;background:#fff;">'
             . esc_html($notices[$msg]) . '</div>';
     }
+
+    /* ✅ BUY CREDITS UI */
+    echo '<hr>';
+    echo '<h3>Buy Credits</h3>';
+    echo '<div class="pm-credit-options" style="margin-bottom:20px;">';
+
+    echo '<p><a class="button" href="' . esc_url( add_query_arg([
+        'pm_buy_credits' => 1,
+    ]) ) . '">Buy 1 credit (£' . $credit_prices['price_1'] . ')</a></p>';
+
+    echo '<p><a class="button" href="' . esc_url( add_query_arg([
+        'pm_buy_credits' => 5,
+    ]) ) . '">Buy 5 credits (£' . $credit_prices['price_5'] . ')</a></p>';
+
+    echo '<p><a class="button" href="' . esc_url( add_query_arg([
+        'pm_buy_credits' => 10,
+    ]) ) . '">Buy 10 credits (£' . $credit_prices['price_10'] . ')</a></p>';
+
+    echo '</div>';
+
+
+    
+
+    ob_start();
+
 
     echo '<hr>';
     echo '<h3>Available Leads</h3>';
