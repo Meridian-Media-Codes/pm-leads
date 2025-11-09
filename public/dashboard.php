@@ -148,9 +148,9 @@ add_action('template_redirect', function () {
     update_user_meta($user_id, 'pm_credit_balance', max(0, $bal - 1));
 
     // Mark purchased
-    if (function_exists('pm_mark_job_purchased_by')) {
-        pm_mark_job_purchased_by($job_id, $user_id);
-    }
+    pm_leads_mark_vendor_bought($job_id, $user_id);
+    pm_leads_inc_purchase_count($job_id);
+
 
     // Sync WC stock
     $product_id = intval(get_post_meta($job_id, '_pm_lead_product_id', true));
