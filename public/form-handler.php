@@ -25,16 +25,17 @@ add_action('init', function () {
     }
 
     // create post
-    $title = sprintf('Move %s → %s', $current, $new);
-    $job_id = wp_insert_post([
+$title = sprintf('Move %s → %s', $current, $new);
+$job_id = wp_insert_post([
     'post_type'   => 'pm_job',
     'post_title'  => $title,
     'post_status' => 'publish',
 ]);
 
-if ($job_id && !is_wp_error($job_id)) {
-    do_action('pm_lead_created', $job_id);
+if (is_wp_error($job_id) || !$job_id) {
+    wp_die(__('Could not create job', 'pm-leads'));
 }
+
 
 
 
@@ -70,6 +71,7 @@ if ($job_id && !is_wp_error($job_id)) {
 
 
     do_action('pm_leads_job_created', $job_id);
+    do_action('pm_lead_created', $job_id);
 
     // assign status "available"
     $term = term_exists('available', 'pm_job_status');
