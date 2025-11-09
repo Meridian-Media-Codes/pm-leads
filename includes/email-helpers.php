@@ -156,6 +156,60 @@ add_action('pm_lead_purchased_with_credits', function($job_id, $vendor_id) {
     }
 }, 10, 2);
 
+/**
+ * DEBUG: Log vendor notification paths on new lead
+ */
+add_action('pm_lead_created', function ($job_id) {
+
+    error_log("PM DEBUG: pm_lead_created fired for job {$job_id}");
+
+    $from_lat = get_post_meta($job_id, 'pm_job_from_lat', true);
+    $from_lng = get_post_meta($job_id, 'pm_job_from_lng', true);
+
+    if (!$from_lat || !$from_lng) {
+        error_log("PM DEBUG: Job {$job_id} missing coords — from_lat={$from_lat}, from_lng={$from_lng}");
+        return;
+    }
+
+    $opts   = function_exists('pm_leads_get_options') ? pm_leads_get_options() : [];
+    $radius = isset($opts['default_radius']) ? intval($opts['default_radius']) : 50;
+    error_log("PM DEBUG: Radius = {$radius}");
+
+    $vendors = get_users([
+        'role'   => 'pm_vendor',
+        'fields' => ['ID']
+    ]);
+
+    error_log("PM DEBUG: Found " . count($vendors) . " vendors");
+
+    foreach ($vendors as $v) {
+        $vid = $v->ID;
+        $v_lat = get_user_meta($vid, 'pm_vendor_lat', true);
+        $v_lng = get_user_meta($vid, 'pm_vendor_lng', true);
+
+        if (!$v_lat || !$v_lng) {
+            error_log("PM DEBUG: Vendor {$vid} missing coords — v_lat={$v_lat}, v_lng={$v_lng}");
+            continue;
+        }
+
+        if (!function_exists('pm_leads_distance_mi')) {
+            error_log("PM DEBUG: pm_leads_distance_mi missing!");
+            continue;
+        }
+
+        $dist = pm_leads_distance_mi($from_lat, $from_lng, $v_lat, $v_lng);
+        error_log("PM DEBUG: Vendor {$vid} distance={$dist}");
+
+        if ($dist <= $radius) {
+            error_log("PM DEBUG: Vendor {$vid} IN RANGE → send email");
+        } else {
+            error_log("PM DEBUG: Vendor {$vid} OUT OF RANGE");
+        }
+    }
+}, 5);
+
+
+
 add_action('pm_lead_created', function ($job_id) {
     $data = pm_leads_build_job_tags($job_id, 0);
     if (!empty($data['customer_email'])) {
