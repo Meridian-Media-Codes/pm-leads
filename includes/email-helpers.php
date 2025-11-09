@@ -235,9 +235,13 @@ add_action('pm_lead_created', function ($job_id) {
 
         $dist = pm_leads_distance_mi($from_lat, $from_lng, $v_lat, $v_lng);
         if ($dist <= $radius) {
-            $data = pm_leads_build_job_tags($job_id, $vid);
-            pm_leads_send_template('new_lead_vendors', $data['vendor_email'] ?? '', $data);
-        }
+    error_log("PM DEBUG: Vendor {$vid} IN RANGE → sending email to {$v_lat}, {$v_lng}");
+    $data = pm_leads_build_job_tags($job_id, $vid);
+
+    $sent = pm_leads_send_template('new_lead_vendors', $data['vendor_email'] ?? '', $data);
+    error_log("PM DEBUG: send_template result=" . var_export($sent,true));
+}
+
     }
 });
 
