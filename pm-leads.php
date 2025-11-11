@@ -31,6 +31,26 @@ require_once PM_LEADS_DIR . 'includes/integrations/fluentforms.php';
 require_once PM_LEADS_DIR . 'admin/job-meta.php';
 require_once PM_LEADS_DIR . 'includes/integrations/fluentforms-vendor.php';
 require_once __DIR__ . '/includes/email-helpers.php';
+require_once __DIR__ . '/admin/pricing.php';
+
+/**
+ * Admin Menu: Add Credit Pricing page
+ */
+add_action('admin_menu', function () {
+
+    // parent slug is the slug used in your main menu
+    // it comes from admin/menu.php
+    $parent_slug = 'pm-leads';
+
+    add_submenu_page(
+        $parent_slug,
+        'Credit Pricing',      // page title
+        'Credit Pricing',      // menu label
+        'manage_options',
+        'pm-leads-pricing',
+        'pm_leads_pricing_page' // callback from pricing.php
+    );
+});
 
 
 register_activation_hook(__FILE__, function () {
