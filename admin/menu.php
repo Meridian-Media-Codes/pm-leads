@@ -321,7 +321,7 @@ function pm_leads_render_vendors() {
         echo '<tr><td colspan="5">No vendors found.</td></tr>';
     }
     echo '</tbody></table></div>';
-}
+
 
 /* ---------------------------
  * Jobs (admin)
