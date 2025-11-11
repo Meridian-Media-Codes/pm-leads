@@ -215,21 +215,8 @@ add_shortcode('pm_vendor_dashboard', function () {
     /* ✅ BUY CREDITS UI */
     echo '<hr>';
     echo '<h3>Buy Credits</h3>';
-    echo '<div class="pm-credit-options" style="margin-bottom:20px;">';
+    echo '<button class="button pm-open-credit-modal">Purchase Credits</button>';
 
-    echo '<p><a class="button" href="' . esc_url( add_query_arg([
-        'pm_buy_credits' => 1,
-    ]) ) . '">Buy 1 credit (£' . $credit_prices['price_1'] . ')</a></p>';
-
-    echo '<p><a class="button" href="' . esc_url( add_query_arg([
-        'pm_buy_credits' => 5,
-    ]) ) . '">Buy 5 credits (£' . $credit_prices['price_5'] . ')</a></p>';
-
-    echo '<p><a class="button" href="' . esc_url( add_query_arg([
-        'pm_buy_credits' => 10,
-    ]) ) . '">Buy 10 credits (£' . $credit_prices['price_10'] . ')</a></p>';
-
-    echo '</div>';
 
 
     
@@ -396,7 +383,55 @@ document.addEventListener('click', function(e){
         document.getElementById('pm-job-modal').style.display = 'none';
     }
 });
+
+/** OPEN CREDIT MODAL */
+document.addEventListener('click', function(e){
+    if (e.target.classList.contains('pm-open-credit-modal')) {
+        document.getElementById('pm-credit-modal').style.display = 'block';
+    }
+});
+
+/** BUY SELECTED CREDIT PACK */
+document.addEventListener('click', function(e){
+    if (e.target.classList.contains('pm-buy-credit')) {
+        let qty = e.target.getAttribute('data-qty');
+        if (!qty) return;
+
+        window.location = "<?php echo home_url('/'); ?>" + "?pm_buy_credits=" + qty;
+    }
+});
+
 </script>
+
+<!-- CREDIT MODAL -->
+<div id="pm-credit-modal" class="pm-modal">
+    <div class="pm-modal-content">
+        <span class="pm-close">&times;</span>
+        <h3>Purchase Credits</h3>
+
+        <p>Select a credit bundle</p>
+
+        <p>
+            <a class="button pm-buy-credit" data-qty="1">
+                Buy 1 credit (£<?php echo $credit_prices['price_1']; ?>)
+            </a>
+        </p>
+
+        <p>
+            <a class="button pm-buy-credit" data-qty="5">
+                Buy 5 credits (£<?php echo $credit_prices['price_5']; ?>)
+            </a>
+        </p>
+
+        <p>
+            <a class="button pm-buy-credit" data-qty="10">
+                Buy 10 credits (£<?php echo $credit_prices['price_10']; ?>)
+            </a>
+        </p>
+
+    </div>
+</div>
+
 
 <?php
     return ob_get_clean();
