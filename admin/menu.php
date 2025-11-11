@@ -389,3 +389,19 @@ function pm_leads_render_settings() {
     submit_button();
     echo '</form></div>';
 }
+
+
+add_action('admin_menu', function () {
+
+    // SETTINGS PAGE slug
+    $settings_slug = 'pm-leads-settings';
+
+    add_submenu_page(
+        $settings_slug,
+        'Credit Pricing',     // page title
+        'Credit Pricing',     // menu label
+        'manage_options',
+        'pm-leads-pricing',
+        'pm_leads_pricing_page'
+    );
+});
