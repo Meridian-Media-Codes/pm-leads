@@ -68,5 +68,7 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
     }
 
     do_action('pm_vendor_created', $user_id);
+    do_action('pm_vendor_application_received', $user_id);
+
 
 }, 10, 2);

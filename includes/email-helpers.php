@@ -165,6 +165,29 @@ add_action('pm_lead_purchased_with_credits', function($job_id, $vendor_id) {
     }
 }, 10, 2);
 
+add_action('pm_vendor_application_received', function($vendor_id){
+
+    if (!$vendor_id) return;
+
+    $email   = get_userdata($vendor_id)->user_email;
+    if (!$email) return;
+
+    $tmpl = pm_leads_get_email_template('vendor_application_received');
+
+    $subject = $tmpl['subject'] ?? 'Thank you for applying';
+    $body    = $tmpl['body'] ?? '';
+
+    // Token replacements
+    $body = str_replace(
+        ['{{email}}','{{admin_email}}'],
+        [$email, get_option('admin_email')],
+        $body
+    );
+
+    pm_leads_send_email($email, $subject, $body);
+});
+
+
 
 /**
  * ✅ MAIN vendor notify handler

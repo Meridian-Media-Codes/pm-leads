@@ -3,8 +3,8 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * EMAIL SETTINGS (UI only)
- * Appears under: Admin → PM Leads → Settings → Emails
- * Storage/helpers live in includes/email-helpers.php (separate option).
+ * Admin → PM Leads → Settings → Emails
+ * Storage/helpers live in includes/email-helpers.php
  */
 
 /* ---------------------------------------------
@@ -25,18 +25,19 @@ function pm_leads_allowed_merge_tags($key) {
         '{job_from_lat}','{job_from_lng}','{job_to_lat}','{job_to_lng}',
         '{job_distance_miles}','{distance_vendor_to_origin_miles}',
     ];
-    $site = ['{site_name}','{site_url}','{dashboard_url}'];
+    $site = ['{site_name}','{site_url}','{dashboard_url}','{admin_email}'];
     $credit = ['{credits_purchased}','{credit_unit_price}','{new_credit_balance}'];
 
     switch ($key) {
-        case 'new_lead_customer':         return array_merge($customer, $site);
-        case 'new_lead_vendors':          return array_merge($vendor, $customer, $job_misc, $site);
-        case 'lead_purchased_vendor':     return array_merge($vendor, $customer, $job_misc, $site);
-        case 'lead_purchased_customer':   return array_merge($customer, ['{vendor_name}','{vendor_email}','{vendor_company}','{vendor_phone}'], $job_misc, $site);
-        case 'credits_purchased_vendor':  return array_merge($vendor, $credit, $site);
-        case 'low_credits_vendor':        return array_merge($vendor, ['{low_credit_threshold}'], $site);
-        case 'vendor_approved_vendor':    return array_merge($vendor, $site);
-        default:                          return $site;
+        case 'new_lead_customer':               return array_merge($customer, $site);
+        case 'new_lead_vendors':                return array_merge($vendor, $customer, $job_misc, $site);
+        case 'lead_purchased_vendor':           return array_merge($vendor, $customer, $job_misc, $site);
+        case 'lead_purchased_customer':         return array_merge($customer, ['{vendor_name}','{vendor_email}','{vendor_company}','{vendor_phone}'], $job_misc, $site);
+        case 'credits_purchased_vendor':        return array_merge($vendor, $credit, $site);
+        case 'low_credits_vendor':              return array_merge($vendor, ['{low_credit_threshold}'], $site);
+        case 'vendor_approved_vendor':          return array_merge($vendor, $site);
+        case 'vendor_application_received':     return array_merge($vendor, $site);
+        default:                                return $site;
     }
 }
 
@@ -94,16 +95,16 @@ function pm_leads_template_editor($key, $title) {
     echo '<table class="form-table" style="max-width:880px;table-layout:fixed;">';
 
     echo '<tr><th style="width:200px;"><label>Enable</label></th><td>';
-    echo '<label><input type="checkbox" name="enabled" value="1" '.checked($tpl['enabled'],1,false).'> Send this email</label>';
+    echo '<label><input type="checkbox" name="enabled" value="1" '.checked(!empty($tpl['enabled']), true, false).'> Send this email</label>';
     echo '</td></tr>';
 
     echo '<tr><th><label>Subject</label></th><td>';
-    echo '<input type="text" name="subject" value="'.esc_attr($tpl['subject']).'" class="regular-text" style="width:100%"/>';
+    echo '<input type="text" name="subject" value="'.esc_attr($tpl['subject'] ?? '').'" class="regular-text" style="width:100%"/>';
     echo '</td></tr>';
 
     echo '<tr><th><label>Body</label></th><td>';
     wp_editor(
-        $tpl['body'],
+        $tpl['body'] ?? '',
         "pm_email_body_{$key}",
         [
             'textarea_name' => 'body',
@@ -126,14 +127,21 @@ function pm_leads_template_editor($key, $title) {
    Main renderer (called by menu.php)
 --------------------------------------------- */
 function pm_leads_render_email_settings() {
+
+    // List of templates the UI should expose
     $allowed = [
-        'new_lead_customer','new_lead_vendors',
-        'lead_purchased_vendor','lead_purchased_customer',
-        'credits_purchased_vendor','low_credits_vendor',
-        'vendor_approved_vendor'
+        'new_lead_customer',
+        'new_lead_vendors',
+        'lead_purchased_vendor',
+        'lead_purchased_customer',
+        'credits_purchased_vendor',
+        'low_credits_vendor',
+        'vendor_approved_vendor',
+        'vendor_application_received', // ✅ new tab
     ];
+
     $sub = isset($_GET['email_tab']) ? sanitize_key($_GET['email_tab']) : 'new_lead_customer';
-    if (!in_array($sub,$allowed,true)) $sub = 'new_lead_customer';
+    if (!in_array($sub, $allowed, true)) $sub = 'new_lead_customer';
 
     echo '<div class="wrap pm-email-settings">';
     if (!empty($_GET['saved'])) {
@@ -146,27 +154,30 @@ function pm_leads_render_email_settings() {
     echo '<h2 class="nav-tab-wrapper" style="margin-top:20px;">';
     $make = function($id,$label) use($sub) {
         $url = add_query_arg(['page'=>'pm-leads-settings','tab'=>'emails','email_tab'=>$id], admin_url('admin.php'));
-        $cls = 'nav-tab' . ($sub===$id ? ' nav-tab-active' : '');
+        $cls = 'nav-tab' . ($sub === $id ? ' nav-tab-active' : '');
         echo '<a href="'.esc_url($url).'" class="'.esc_attr($cls).'">'.esc_html($label).'</a>';
     };
-    $make('new_lead_customer','New Lead → Customer');
-    $make('new_lead_vendors','New Lead → Vendors');
-    $make('lead_purchased_vendor','Lead Purchased → Vendor');
-    $make('lead_purchased_customer','Lead Purchased → Customer');
-    $make('credits_purchased_vendor','Credits Purchased → Vendor');
-    $make('low_credits_vendor','Low Credits → Vendor');
-    $make('vendor_approved_vendor','Vendor Approved → Vendor');
+
+    $make('new_lead_customer',        'New Lead → Customer');
+    $make('new_lead_vendors',         'New Lead → Vendors');
+    $make('lead_purchased_vendor',    'Lead Purchased → Vendor');
+    $make('lead_purchased_customer',  'Lead Purchased → Customer');
+    $make('credits_purchased_vendor', 'Credits Purchased → Vendor');
+    $make('low_credits_vendor',       'Low Credits → Vendor');
+    $make('vendor_approved_vendor',   'Vendor Approved → Vendor');
+    $make('vendor_application_received','Vendor application received'); // ✅ new tab label
     echo '</h2>';
 
     echo '<div style="padding:20px;background:#fff;border:1px solid #ddd;border-top:none;">';
     switch ($sub) {
-        case 'new_lead_customer':         pm_leads_template_editor('new_lead_customer','New Lead → Customer'); break;
-        case 'new_lead_vendors':          pm_leads_template_editor('new_lead_vendors','New Lead → Vendors'); break;
-        case 'lead_purchased_vendor':     pm_leads_template_editor('lead_purchased_vendor','Lead Purchased → Vendor'); break;
-        case 'lead_purchased_customer':   pm_leads_template_editor('lead_purchased_customer','Lead Purchased → Customer'); break;
-        case 'credits_purchased_vendor':  pm_leads_template_editor('credits_purchased_vendor','Credits Purchased → Vendor'); break;
-        case 'low_credits_vendor':        pm_leads_template_editor('low_credits_vendor','Low Credits → Vendor'); break;
-        case 'vendor_approved_vendor':    pm_leads_template_editor('vendor_approved_vendor','Vendor Approved → Vendor'); break;
+        case 'new_lead_customer':             pm_leads_template_editor('new_lead_customer','New Lead → Customer'); break;
+        case 'new_lead_vendors':              pm_leads_template_editor('new_lead_vendors','New Lead → Vendors'); break;
+        case 'lead_purchased_vendor':         pm_leads_template_editor('lead_purchased_vendor','Lead Purchased → Vendor'); break;
+        case 'lead_purchased_customer':       pm_leads_template_editor('lead_purchased_customer','Lead Purchased → Customer'); break;
+        case 'credits_purchased_vendor':      pm_leads_template_editor('credits_purchased_vendor','Credits Purchased → Vendor'); break;
+        case 'low_credits_vendor':            pm_leads_template_editor('low_credits_vendor','Low Credits → Vendor'); break;
+        case 'vendor_approved_vendor':        pm_leads_template_editor('vendor_approved_vendor','Vendor Approved → Vendor'); break;
+        case 'vendor_application_received':   pm_leads_template_editor('vendor_application_received','Vendor application received'); break; // ✅ new editor
     }
     echo '</div></div>';
 }
