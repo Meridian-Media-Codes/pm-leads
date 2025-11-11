@@ -15,6 +15,8 @@ if (is_admin()) {
     require_once plugin_dir_path(__DIR__) . 'includes/email-helpers.php';
     // Settings UI (registers the admin_init save handler)
     require_once __DIR__ . '/settings-emails.php';
+    require_once plugin_dir_path(__DIR__) . 'includes/vendor-status.php';
+
 }
 
 /** Current vendor user ID or 0 */
@@ -189,37 +191,80 @@ function pm_leads_render_dashboard() {
 function pm_leads_render_vendors() {
     if (!current_user_can('manage_options')) return;
 
-    if (!empty($_POST['pm_vendor_nonce']) && wp_verify_nonce($_POST['pm_vendor_nonce'], 'pm_vendor_save')) {
-        $vid = absint($_POST['vendor_id']);
-        if ($vid) {
-
-            if (!empty($_POST['vendor_email'])) {
-                wp_update_user([
-                    'ID'         => $vid,
-                    'user_email' => sanitize_email($_POST['vendor_email'])
-                ]);
-            }
-
-            $fields = ['company_name','first_name','last_name','contact_number','business_postcode','service_radius','years_in_business'];
-            foreach ($fields as $k) {
-                if (isset($_POST[$k])) update_user_meta($vid, $k, sanitize_text_field($_POST[$k]));
-            }
-
-            if (isset($_POST['pm_credit_balance'])) {
-                update_user_meta($vid, 'pm_credit_balance', intval($_POST['pm_credit_balance']));
-            }
-
-            if (!empty($_POST['business_postcode']) && function_exists('pm_leads_geocode')) {
-                $coords = pm_leads_geocode(sanitize_text_field($_POST['business_postcode']));
-                if (!empty($coords['lat']) && !empty($coords['lng'])) {
-                    update_user_meta($vid, 'pm_vendor_lat', $coords['lat']);
-                    update_user_meta($vid, 'pm_vendor_lng', $coords['lng']);
-                }
-            }
-
-            echo '<div class="updated notice"><p>Vendor updated.</p></div>';
-        }
+    // Notice
+    if (!empty($_GET['updated'])) {
+        echo '<div class="notice notice-success is-dismissible"><p>Vendor status updated.</p></div>';
     }
+
+    $vendors = get_users(['role' => 'pm_vendor', 'number' => 1000]);
+
+    $groups = ['pending'=>[], 'approved'=>[], 'declined'=>[]];
+    foreach ($vendors as $u) {
+        $groups[ pm_vendor_get_status($u->ID) ][] = $u;
+    }
+
+    $render_table = function($title, $list) {
+        echo '<h1 style="margin-top:24px;">' . esc_html($title) . '</h1>';
+        echo '<table class="widefat striped"><thead><tr>';
+        echo '<th>Company/User</th><th>Email</th><th>Credits</th><th>Registered</th><th>Status</th><th>Actions</th>';
+        echo '</tr></thead><tbody>';
+
+        if (empty($list)) {
+            echo '<tr><td colspan="6"><em>None</em></td></tr>';
+        } else {
+            foreach ($list as $v) {
+                $credits = (int) get_user_meta($v->ID, 'pm_credit_balance', true);
+                $status  = pm_vendor_get_status($v->ID);
+
+                $btn = function($uid, $to) {
+                    $url = wp_nonce_url(
+                        add_query_arg([
+                            'action' => 'pm_vendor_set_status',
+                            'uid'    => $uid,
+                            'status' => $to,
+                        ], admin_url('admin-post.php')),
+                        'pm_vendor_set_status_' . $uid
+                    );
+                    $label = ucfirst($to);
+                    return '<a class="button button-small" href="'.esc_url($url).'">'.$label.'</a>';
+                };
+
+                $profile_url = esc_url(admin_url('admin.php?page=pm-leads-vendors&vendor_id='.intval($v->ID)));
+
+                echo '<tr>';
+                echo '<td>'.esc_html($v->display_name).'</td>';
+                echo '<td>'.esc_html($v->user_email).'</td>';
+                echo '<td>'.esc_html($credits).'</td>';
+                echo '<td>'.esc_html($v->user_registered).'</td>';
+                echo '<td>'.esc_html($status).'</td>';
+                echo '<td style="white-space:nowrap;display:flex;gap:6px;align-items:center;">';
+                echo '<a class="button button-small" href="'.$profile_url.'">Open</a> ';
+
+                // Action set based on current status
+                if ($status === 'pending') {
+                    echo $btn($v->ID, 'approved') . ' ' . $btn($v->ID, 'declined');
+                } elseif ($status === 'approved') {
+                    echo $btn($v->ID, 'pending') . ' ' . $btn($v->ID, 'declined');
+                } else { // declined
+                    echo $btn($v->ID, 'pending') . ' ' . $btn($v->ID, 'approved');
+                }
+
+                echo '</td>';
+                echo '</tr>';
+            }
+        }
+        echo '</tbody></table>';
+    };
+
+    echo '<div class="wrap"><h1>Vendors</h1>';
+
+    $render_table('Pending vendors',  $groups['pending']);
+    $render_table('Approved vendors', $groups['approved']);
+    $render_table('Declined vendors', $groups['declined']);
+
+    echo '</div>';
+}
+
 
     if (!empty($_GET['vendor_id'])) {
         $uid = absint($_GET['vendor_id']);
@@ -398,3 +443,29 @@ function pm_leads_render_settings() {
 }
 
 
+// Handle approve/decline/pending
+add_action('admin_post_pm_vendor_set_status', function () {
+    if ( ! current_user_can('manage_options')) wp_die('No permission');
+    $uid    = isset($_GET['uid']) ? absint($_GET['uid']) : 0;
+    $status = isset($_GET['status']) ? sanitize_key($_GET['status']) : 'pending';
+    $nonce  = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
+    if (!wp_verify_nonce($nonce, 'pm_vendor_set_status_' . $uid)) wp_die('Bad nonce');
+
+    $old = pm_vendor_get_status($uid);
+    $new = pm_vendor_set_status($uid, $status);
+
+    // Fire an action other code can listen to
+    do_action('pm_vendor_status_changed', $uid, $new, $old);
+
+    // If approved, trigger the configured template email
+    if ($new === 'approved') {
+        if (function_exists('pm_leads_send_email')) {
+            pm_leads_send_email('vendor_approved_vendor', ['vendor_id' => $uid]);
+        } else {
+            do_action('pm_leads_send_email', 'vendor_approved_vendor', ['vendor_id' => $uid]);
+        }
+    }
+
+    wp_safe_redirect( add_query_arg(['page'=>'pm-leads-vendors','updated'=>'1'], admin_url('admin.php')) );
+    exit;
+});

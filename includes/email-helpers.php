@@ -7,6 +7,11 @@ if (!defined('ABSPATH')) exit;
  */
 const PM_LEADS_EMAIL_OPT = 'pm_leads_emails';
 
+
+if (!function_exists('pm_vendor_is_approved')) {
+    require_once plugin_dir_path(__FILE__) . 'vendor-status.php';
+}
+
 /* ---------------------------------------------
    Storage helpers
 --------------------------------------------- */
@@ -223,35 +228,37 @@ add_action('pm_lead_created', function ($job_id) {
 
     foreach ($vendors as $v) {
 
-        $vid  = $v->ID;
-        $v_lat = get_user_meta($vid, 'pm_vendor_lat', true);
-        $v_lng = get_user_meta($vid, 'pm_vendor_lng', true);
+    $vid = $v->ID;
 
-        if (!$v_lat || !$v_lng) {
-            error_log("PM DEBUG: Vendor {$vid} missing coords");
-            continue;
-        }
-
-        if (!function_exists('pm_leads_distance_mi')) {
-            error_log("PM DEBUG: pm_leads_distance_mi missing");
-            continue;
-        }
-
-        $dist = pm_leads_distance_mi($from_lat, $from_lng, $v_lat, $v_lng);
-        error_log("PM DEBUG: Vendor {$vid} distance={$dist}");
-
-        if ($dist <= $radius) {
-
-            $data = pm_leads_build_job_tags($job_id, $vid);
-            $to   = $data['vendor_email'] ?? '';
-
-            error_log("PM DEBUG: Vendor {$vid} IN RANGE → sending email to {$to}");
-
-            $sent = pm_leads_send_template('new_lead_vendors', $to, $data);
-
-            error_log("PM DEBUG: send_template result=" . var_export($sent,true));
-        }
+    // ✅ NEW — only email approved vendors
+    if (!pm_vendor_is_approved($vid)) {
+        error_log("PM DEBUG: Vendor {$vid} is NOT approved — skip");
+        continue;
     }
+
+    $v_lat = get_user_meta($vid, 'pm_vendor_lat', true);
+    $v_lng = get_user_meta($vid, 'pm_vendor_lng', true);
+
+    if (!$v_lat || !$v_lng) {
+        error_log("PM DEBUG: Vendor {$vid} missing coords");
+        continue;
+    }
+
+    $dist = pm_leads_distance_mi($from_lat, $from_lng, $v_lat, $v_lng);
+
+    if ($dist <= $radius) {
+
+        $data = pm_leads_build_job_tags($job_id, $vid);
+        $to   = $data['vendor_email'] ?? '';
+
+        error_log("PM DEBUG: Vendor {$vid} IN RANGE → sending email to {$to}");
+
+        $sent = pm_leads_send_template('new_lead_vendors', $to, $data);
+
+        error_log("PM DEBUG: send_template result=" . var_export($sent,true));
+    }
+}
+
 
 }, 10, 1);
 
