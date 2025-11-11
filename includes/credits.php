@@ -280,7 +280,7 @@ function pm_leads_handle_buy_with_credits() {
     exit;
 }
 
-add_action('template_redirect', function() {
+add_action('template_redirect', function () {
 
     if (empty($_GET['pm_buy_credits'])) return;
 
@@ -293,24 +293,33 @@ add_action('template_redirect', function() {
     }
 
     $prices = get_option('pm_leads_credit_prices', []);
-    $price = $prices['price_' . $qty] ?? 0;
+    $price  = $prices['price_' . $qty] ?? 0;
     if (!$price) return;
 
-    // Create WC product on the fly
-    $product = new WC_Product_Simple();
-    $product->set_name("Credit Pack ({$qty})");
-    $product->set_regular_price($price);
-    $product->set_virtual(true);
-    $product->set_sold_individually(true);
-    $product->save();
+    // ✅ A single static product per credit tier
+    $product_id = get_option('pm_leads_credit_product_' . $qty);
 
-    // Store credit count in product for fulfilment
-    update_post_meta($product->get_id(), '_pm_lead_credit_value', $qty);
+    if (!$product_id) {
 
-    // Create cart + checkout
+        // Create once, store product ID
+        $product = new WC_Product_Simple();
+        $product->set_name("Credit Pack ({$qty})");
+        $product->set_regular_price($price);
+        $product->set_virtual(true);
+        $product->set_sold_individually(true);
+        $product->save();
+
+        update_post_meta($product->get_id(), '_pm_lead_credit_value', $qty);
+        update_option('pm_leads_credit_product_' . $qty, $product->get_id());
+
+        $product_id = $product->get_id();
+    }
+
+    // ✅ Add to cart + redirect to checkout
     WC()->cart->empty_cart();
-    WC()->cart->add_to_cart($product->get_id(), 1);
+    WC()->cart->add_to_cart($product_id, 1);
 
     wp_safe_redirect(wc_get_checkout_url());
     exit;
 });
+

@@ -379,10 +379,24 @@ document.addEventListener('click', function(e){
 });
 
 document.addEventListener('click', function(e){
-    if(e.target.classList.contains('pm-close') || e.target.id === 'pm-job-modal') {
+
+    // Close JOB modal
+    if (
+        e.target.classList.contains('pm-close') ||
+        e.target.id === 'pm-job-modal'
+    ) {
         document.getElementById('pm-job-modal').style.display = 'none';
     }
+
+    // Close CREDIT modal
+    if (
+        e.target.classList.contains('pm-close') ||
+        e.target.id === 'pm-credit-modal'
+    ) {
+        document.getElementById('pm-credit-modal').style.display = 'none';
+    }
 });
+
 
 /** OPEN CREDIT MODAL */
 document.addEventListener('click', function(e){
