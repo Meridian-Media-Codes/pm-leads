@@ -374,6 +374,7 @@ function pm_leads_render_settings() {
     echo '<h2 class="nav-tab-wrapper">';
     echo '<a href="?page=pm-leads-settings&tab=general" class="nav-tab '.($tab==='general'?'nav-tab-active':'').'">General</a>';
     echo '<a href="?page=pm-leads-settings&tab=emails"  class="nav-tab '.($tab==='emails' ?'nav-tab-active':'').'">Emails</a>';
+    echo '<a href="?page=pm-leads-settings&tab=pricing" class="nav-tab '.($tab==='pricing'?'nav-tab-active':'').'">Credit Pricing</a>';
     echo '</h2>';
 
     if ($tab === 'emails') {
@@ -383,6 +384,12 @@ function pm_leads_render_settings() {
         return;
     }
 
+    if ($tab === 'pricing') {
+    pm_leads_pricing_page();
+    echo '</div>';
+    return;
+}
+
     echo '<form method="post" action="options.php">';
     settings_fields('pm_leads_options_group');
     do_settings_sections('pm_leads_settings');
@@ -391,17 +398,3 @@ function pm_leads_render_settings() {
 }
 
 
-add_action('admin_menu', function () {
-
-    // SETTINGS PAGE slug
-    $settings_slug = 'pm-leads-settings';
-
-    add_submenu_page(
-        $settings_slug,
-        'Credit Pricing',     // page title
-        'Credit Pricing',     // menu label
-        'manage_options',
-        'pm-leads-pricing',
-        'pm_leads_pricing_page'
-    );
-});
