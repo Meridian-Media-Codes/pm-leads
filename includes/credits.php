@@ -279,3 +279,38 @@ function pm_leads_handle_buy_with_credits() {
     wp_safe_redirect(add_query_arg('pm_msg', 'purchased', $redirect));
     exit;
 }
+
+add_action('template_redirect', function() {
+
+    if (empty($_GET['pm_buy_credits'])) return;
+
+    $qty = absint($_GET['pm_buy_credits']);
+    if (!in_array($qty, [1,5,10], true)) return;
+
+    if (!is_user_logged_in()) {
+        wp_safe_redirect( wp_login_url( add_query_arg([]) ) );
+        exit;
+    }
+
+    $prices = get_option('pm_leads_credit_prices', []);
+    $price = $prices['price_' . $qty] ?? 0;
+    if (!$price) return;
+
+    // Create WC product on the fly
+    $product = new WC_Product_Simple();
+    $product->set_name("Credit Pack ({$qty})");
+    $product->set_regular_price($price);
+    $product->set_virtual(true);
+    $product->set_sold_individually(true);
+    $product->save();
+
+    // Store credit count in product for fulfilment
+    update_post_meta($product->get_id(), '_pm_lead_credit_value', $qty);
+
+    // Create cart + checkout
+    WC()->cart->empty_cart();
+    WC()->cart->add_to_cart($product->get_id(), 1);
+
+    wp_safe_redirect(wc_get_checkout_url());
+    exit;
+});
