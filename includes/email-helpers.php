@@ -345,3 +345,5 @@ function pm_leads_maybe_warn_low_credits($vendor_id) {
 
     pm_leads_send_template('low_credits_vendor', $data['vendor_email'], $data);
 }
+
+add_action('pm_leads_vendor_approved', 'pm_leads_mark_vendor_approved');
