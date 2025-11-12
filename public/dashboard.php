@@ -175,6 +175,9 @@ add_action('template_redirect', function () {
 /**
  * Shortcode: Vendor Dashboard
  */
+/**
+ * Shortcode: Vendor Dashboard
+ */
 add_shortcode('pm_vendor_dashboard', function () {
 
     if (!is_user_logged_in()) {
@@ -203,250 +206,239 @@ add_shortcode('pm_vendor_dashboard', function () {
     ]);
 
     ob_start();
-    echo '<div class="pm-dashboard">';
-    echo '<h2>Vendor Dashboard</h2>';
-    echo '<p><strong>Credits:</strong> ' . intval($balance) . '</p>';
+    ?>
 
-    if ($msg && isset($notices[$msg])) {
-        echo '<div class="notice" style="margin:10px 0;padding:10px;border:1px solid #ccd0d4;background:#fff;">'
-            . esc_html($notices[$msg]) . '</div>';
-    }
+    <div class="pm-vdash">
 
-    /* ✅ BUY CREDITS UI */
-    echo '<hr>';
-    echo '<h3>Buy Credits</h3>';
-    echo '<button class="button pm-open-credit-modal">Purchase Credits</button>';
+        <?php if ($msg && isset($notices[$msg])): ?>
+            <div class="pm-alert"><?php echo esc_html($notices[$msg]); ?></div>
+        <?php endif; ?>
 
+        <!-- Top summary -->
+        <div class="pm-grid pm-grid--top">
+            <section class="pm-card pm-card--summary">
+                <header class="pm-card__header">
+                    <h3 class="pm-card__title">Vendor dashboard</h3>
+                    <div class="pm-chip">Credits: <strong><?php echo intval($balance); ?></strong></div>
+                </header>
 
+                <div class="pm-card__body">
+                    <p class="pm-muted" style="margin:0 0 14px;">
+                        From your account dashboard you can view your
+                        <a href="<?php echo esc_url(wc_get_endpoint_url('orders','',wc_get_page_permalink('myaccount'))); ?>">recent orders</a>,
+                        manage your <a href="<?php echo esc_url(wc_get_endpoint_url('edit-address','',wc_get_page_permalink('myaccount'))); ?>">addresses</a>,
+                        and <a href="<?php echo esc_url(wc_get_endpoint_url('edit-account','',wc_get_page_permalink('myaccount'))); ?>">account details</a>.
+                    </p>
 
-    
+                    <button class="pm-btn pm-btn--brand pm-open-credit-modal" type="button">
+                        Purchase credits
+                    </button>
+                </div>
+            </section>
+        </div>
 
-    ob_start();
+        <!-- Available + Purchased grid -->
+        <div class="pm-grid pm-grid--main">
 
+            <!-- Available leads -->
+            <section class="pm-card">
+                <header class="pm-card__header">
+                    <h3 class="pm-card__title">Available leads</h3>
+                </header>
 
-    echo '<hr>';
-    echo '<h3>Available Leads</h3>';
+                <div class="pm-card__body">
+                    <?php if (empty($available)): ?>
+                        <p class="pm-empty">No leads available in your area right now.</p>
+                    <?php else: ?>
+                        <div class="pm-table-wrap">
+                            <table class="pm-table">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Dist to origin (mi)</th>
+                                    <th>Job distance (mi)</th>
+                                    <th>Purchases</th>
+                                    <th class="pm-table__actions">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($available as $row):
+                                    $job_id  = $row['job_id'];
+                                    $product = intval(get_post_meta($job_id, '_pm_lead_product_id', true));
+                                    ?>
+                                    <tr>
+                                        <td>#<?php echo intval($job_id); ?></td>
+                                        <td><?php echo esc_html($row['from']); ?></td>
+                                        <td><?php echo esc_html($row['to']); ?></td>
+                                        <td><?php echo number_format((float)$row['dist_to_origin'], 1); ?></td>
+                                        <td><?php echo number_format((float)$row['job_distance'], 1); ?></td>
+                                        <td><?php echo intval($row['purchases']); ?>/5</td>
+                                        <td class="pm-table__actions">
+                                            <a class="pm-btn pm-btn--sm pm-btn--brand"
+                                               href="<?php echo esc_url(add_query_arg([
+                                                   'pm_buy_lead' => $job_id,
+                                                   '_wpnonce'    => wp_create_nonce('pm_buy_lead_' . $job_id),
+                                               ])); ?>">
+                                                Buy with 1 credit
+                                            </a>
 
-    if (empty($available)) {
-        echo '<p>No leads available in your area.</p>';
-    } else {
-        echo '<table class="pm-table">';
-        echo '<thead><tr>';
-        echo '<th>ID</th>';
-        echo '<th>From</th>';
-        echo '<th>To</th>';
-        echo '<th>Dist to origin (mi)</th>';
-        echo '<th>Job distance (mi)</th>';
-        echo '<th>Purchases</th>';
-        echo '<th>Actions</th>';
-        echo '</tr></thead><tbody>';
+                                            <?php if ($product):
+                                                $product_url = get_permalink($product); ?>
+                                                <a class="pm-btn pm-btn--sm"
+                                                   href="<?php echo esc_url($product_url); ?>">
+                                                    Buy now
+                                                </a>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
 
-        foreach ($available as $row) {
+            <!-- Purchased leads -->
+            <section class="pm-card">
+                <header class="pm-card__header">
+                    <h3 class="pm-card__title">Purchased leads</h3>
+                </header>
 
-            $job_id  = $row['job_id'];
-            $product = intval(get_post_meta($job_id, '_pm_lead_product_id', true));
+                <div class="pm-card__body">
+                    <?php if (empty($purchased)): ?>
+                        <p class="pm-empty">You haven’t purchased any leads yet.</p>
+                    <?php else: ?>
+                        <div class="pm-table-wrap">
+                            <table class="pm-table">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($purchased as $j):
+                                    $job_id = $j->ID;
 
-            echo '<tr>';
-            echo '<td>#' . intval($job_id) . '</td>';
-            echo '<td>' . esc_html($row['from']) . '</td>';
-            echo '<td>' . esc_html($row['to'])   . '</td>';
-            echo '<td>' . number_format((float)$row['dist_to_origin'], 1) . '</td>';
-            echo '<td>' . number_format((float)$row['job_distance'], 1) . '</td>';
-            echo '<td>' . intval($row['purchases']) . '/5</td>';
+                                    $details = [
+                                        'Customer Name'    => get_post_meta($job_id, 'customer_name', true),
+                                        'Customer Email'   => get_post_meta($job_id, 'customer_email', true),
+                                        'Customer Phone'   => get_post_meta($job_id, 'customer_phone', true),
+                                        'Message'          => get_post_meta($job_id, 'customer_message', true),
+                                        'From Postcode'    => get_post_meta($job_id, 'current_postcode', true),
+                                        'From Address'     => get_post_meta($job_id, 'current_address', true),
+                                        'Bedrooms (From)'  => get_post_meta($job_id, 'bedrooms_current', true),
+                                        'To Postcode'      => get_post_meta($job_id, 'new_postcode', true),
+                                        'To Address'       => get_post_meta($job_id, 'new_address', true),
+                                        'Bedrooms (To)'    => get_post_meta($job_id, 'bedrooms_new', true),
+                                    ];
+                                    $json = wp_json_encode($details);
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <a href="#"
+                                               class="pm-view-job"
+                                               data-payload="<?php echo esc_attr($json); ?>"
+                                               data-id="<?php echo intval($job_id); ?>">
+                                                #<?php echo intval($job_id); ?>
+                                            </a>
+                                        </td>
+                                        <td><?php echo esc_html($details['From Postcode']); ?></td>
+                                        <td><?php echo esc_html($details['To Postcode']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div> <!-- /.pm-grid -->
 
-            echo '<td>';
+        <!-- Job details modal -->
+        <div id="pm-job-modal" class="pm-modal">
+            <div class="pm-modal-content pm-card">
+                <button type="button" class="pm-close" aria-label="Close">&times;</button>
+                <h3 class="pm-card__title" style="margin-bottom:12px;">Lead details</h3>
+                <div id="pm-job-fields" class="pm-job-fields"></div>
+            </div>
+        </div>
 
-            echo '<a href="' . esc_url(add_query_arg([
-                'pm_buy_lead' => $job_id,
-                '_wpnonce'    => wp_create_nonce('pm_buy_lead_' . $job_id),
-            ])) . '" class="button">Buy with 1 credit</a> ';
+        <!-- Credit modal -->
+        <div id="pm-credit-modal" class="pm-modal">
+            <div class="pm-modal-content pm-card">
+                <button type="button" class="pm-close" aria-label="Close">&times;</button>
+                <h3 class="pm-card__title" style="margin-bottom:12px;">Purchase credits</h3>
 
-            if ($product) {
-                $product_url = get_permalink($product);
-                echo '<a href="' . esc_url($product_url) . '" class="button">Buy now</a>';
-            }
+                <div class="pm-credit-grid">
+                    <a class="pm-btn pm-btn--brand pm-btn--block pm-buy-credit" data-qty="1">
+                        Buy 1 credit (£<?php echo intval($credit_prices['price_1']); ?>)
+                    </a>
+                    <a class="pm-btn pm-btn--brand pm-btn--block pm-buy-credit" data-qty="5">
+                        Buy 5 credits (£<?php echo intval($credit_prices['price_5']); ?>)
+                    </a>
+                    <a class="pm-btn pm-btn--brand pm-btn--block pm-buy-credit" data-qty="10">
+                        Buy 10 credits (£<?php echo intval($credit_prices['price_10']); ?>)
+                    </a>
+                </div>
+            </div>
+        </div>
 
-            echo '</td>';
-            echo '</tr>';
-        }
+    </div><!-- /.pm-vdash -->
 
-        echo '</tbody></table>';
-    }
+    <script>
+    // View purchased lead details
+    document.addEventListener('click', function(e){
+        if(!e.target.classList.contains('pm-view-job')) return;
+        e.preventDefault();
+        const payload = e.target.getAttribute('data-payload');
+        if(!payload) return;
 
-    echo '<hr>';
-    echo '<h3>Purchased Leads</h3>';
+        const data = JSON.parse(payload);
+        let html = '';
+        Object.keys(data).forEach(label => {
+            html += `<p class="pm-field"><strong>${label}</strong> <span>${data[label] ?? ''}</span></p>`;
+        });
 
-    if (empty($purchased)) {
-        echo '<p>You have no purchased leads yet.</p>';
-    } else {
-
-        echo '<table class="pm-table">';
-        echo '<thead><tr>';
-        echo '<th>ID</th>';
-        echo '<th>From</th>';
-        echo '<th>To</th>';
-        echo '</tr></thead><tbody>';
-
-        foreach ($purchased as $j) {
-
-            $job_id = $j->ID;
-
-            $details = [
-                'Customer Name'    => get_post_meta($job_id, 'customer_name', true),
-                'Customer Email'   => get_post_meta($job_id, 'customer_email', true),
-                'Customer Phone'   => get_post_meta($job_id, 'customer_phone', true),
-                'Message'          => get_post_meta($job_id, 'customer_message', true),
-                'From Postcode'    => get_post_meta($job_id, 'current_postcode', true),
-                'From Address'     => get_post_meta($job_id, 'current_address', true),
-                'Bedrooms (From)'  => get_post_meta($job_id, 'bedrooms_current', true),
-                'To Postcode'      => get_post_meta($job_id, 'new_postcode', true),
-                'To Address'       => get_post_meta($job_id, 'new_address', true),
-                'Bedrooms (To)'    => get_post_meta($job_id, 'bedrooms_new', true),
-            ];
-
-            $json = wp_json_encode($details);
-
-            echo '<tr>';
-            echo '<td><a href="#" class="pm-view-job" data-payload="' . esc_attr($json) . '" data-id="' . intval($job_id) . '">#' . intval($job_id) . '</a></td>';
-            echo '<td>' . esc_html($details['From Postcode']) . '</td>';
-            echo '<td>' . esc_html($details['To Postcode'])   . '</td>';
-            echo '</tr>';
-        }
-
-        echo '</tbody></table>';
-    }
-
-    echo '</div>'; // CLOSE pm-dashboard
-?>
-
-<!-- MODAL -->
-<div id="pm-job-modal" class="pm-modal">
-    <div class="pm-modal-content">
-        <span class="pm-close">&times;</span>
-        <h3>Lead Details</h3>
-        <div id="pm-job-fields"></div>
-    </div>
-</div>
-
-<style>
-.pm-modal {
-    display:none;
-    position:fixed;
-    z-index:9999;
-    left:0; top:0;
-    width:100%; height:100%;
-    background:rgba(0,0,0,0.5);
-}
-.pm-modal-content {
-    background:#fff;
-    width:90%;
-    max-width:500px;
-    margin:80px auto;
-    padding:20px;
-    border-radius:6px;
-}
-.pm-close {
-    float:right;
-    font-size:22px;
-    cursor:pointer;
-}
-#pm-job-fields p {
-    margin:6px 0;
-}
-#pm-job-fields strong {
-    display:inline-block;
-    width:140px;
-}
-</style>
-
-<script>
-document.addEventListener('click', function(e){
-    if(!e.target.classList.contains('pm-view-job')) return;
-
-    e.preventDefault();
-    let payload = e.target.getAttribute('data-payload');
-    if(!payload) return;
-
-    let data = JSON.parse(payload);
-
-    let html = '';
-    Object.keys(data).forEach(label => {
-        html += `<p><strong>${label}</strong> ${data[label] ?? ''}</p>`;
+        document.getElementById('pm-job-fields').innerHTML = html;
+        document.getElementById('pm-job-modal').style.display = 'block';
+        document.body.classList.add('pm-modal-open');
     });
 
-    document.getElementById('pm-job-fields').innerHTML = html;
-    document.getElementById('pm-job-modal').style.display = 'block';
-});
+    // Close modals
+    document.addEventListener('click', function(e){
+        if (e.target.classList.contains('pm-close') ||
+            e.target.id === 'pm-job-modal' ||
+            e.target.id === 'pm-credit-modal') {
+            document.getElementById('pm-job-modal').style.display = 'none';
+            document.getElementById('pm-credit-modal').style.display = 'none';
+            document.body.classList.remove('pm-modal-open');
+        }
+    });
 
-document.addEventListener('click', function(e){
+    // Open credit modal
+    document.addEventListener('click', function(e){
+        if (e.target.classList.contains('pm-open-credit-modal')) {
+            document.getElementById('pm-credit-modal').style.display = 'block';
+            document.body.classList.add('pm-modal-open');
+        }
+    });
 
-    // Close JOB modal
-    if (
-        e.target.classList.contains('pm-close') ||
-        e.target.id === 'pm-job-modal'
-    ) {
-        document.getElementById('pm-job-modal').style.display = 'none';
-    }
+    // Buy selected credit pack
+    document.addEventListener('click', function(e){
+        if (e.target.classList.contains('pm-buy-credit')) {
+            const qty = e.target.getAttribute('data-qty');
+            if (!qty) return;
+            window.location = "<?php echo home_url('/'); ?>" + "?pm_buy_credits=" + qty;
+        }
+    });
+    </script>
 
-    // Close CREDIT modal
-    if (
-        e.target.classList.contains('pm-close') ||
-        e.target.id === 'pm-credit-modal'
-    ) {
-        document.getElementById('pm-credit-modal').style.display = 'none';
-    }
-});
-
-
-/** OPEN CREDIT MODAL */
-document.addEventListener('click', function(e){
-    if (e.target.classList.contains('pm-open-credit-modal')) {
-        document.getElementById('pm-credit-modal').style.display = 'block';
-    }
-});
-
-/** BUY SELECTED CREDIT PACK */
-document.addEventListener('click', function(e){
-    if (e.target.classList.contains('pm-buy-credit')) {
-        let qty = e.target.getAttribute('data-qty');
-        if (!qty) return;
-
-        window.location = "<?php echo home_url('/'); ?>" + "?pm_buy_credits=" + qty;
-    }
-});
-
-</script>
-
-<!-- CREDIT MODAL -->
-<div id="pm-credit-modal" class="pm-modal">
-    <div class="pm-modal-content">
-        <span class="pm-close">&times;</span>
-        <h3>Purchase Credits</h3>
-
-        <p>Select a credit bundle</p>
-
-        <p>
-            <a class="button pm-buy-credit" data-qty="1">
-                Buy 1 credit (£<?php echo $credit_prices['price_1']; ?>)
-            </a>
-        </p>
-
-        <p>
-            <a class="button pm-buy-credit" data-qty="5">
-                Buy 5 credits (£<?php echo $credit_prices['price_5']; ?>)
-            </a>
-        </p>
-
-        <p>
-            <a class="button pm-buy-credit" data-qty="10">
-                Buy 10 credits (£<?php echo $credit_prices['price_10']; ?>)
-            </a>
-        </p>
-
-    </div>
-</div>
-
-
-<?php
+    <?php
     return ob_get_clean();
 });
+
