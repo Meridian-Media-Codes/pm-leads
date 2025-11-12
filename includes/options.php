@@ -60,5 +60,7 @@ function pm_leads_field_radius() {
 }
 function pm_leads_field_api() {
     $o = pm_leads_get_options();
-    echo '<input type="text" name="pm_leads_options[google_api_key]" value="' . esc_attr($o['google_api_key']) . '" class="regular-text" />';
+    echo '<input type="password" name="pm_leads_options[google_api_key]" value="' . esc_attr($o['google_api_key']) . '" class="regular-text" autocomplete="off" />';
+    echo '<p class="description">Used for geocoding and distance calculations. The key is hidden for security.</p>';
 }
+
