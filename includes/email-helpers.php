@@ -302,7 +302,7 @@ function pm_leads_mark_vendor_approved($vendor_id) {
     $u = get_user_by('id', $vendor_id);
     if (!$u) return;
 
-    // Try to generate a one-time password reset link
+    // Generate one-time password reset link
     $reset_link = '';
     if (function_exists('get_password_reset_key')) {
         $key = get_password_reset_key($u);
@@ -314,18 +314,41 @@ function pm_leads_mark_vendor_approved($vendor_id) {
         }
     }
 
+    // ✅ Create styled button HTML (safe inline CSS)
+    $button_html = '';
+    if ($reset_link) {
+        $button_html = '<p style="text-align:center;margin:30px 0;">
+            <a href="' . esc_url($reset_link) . '" 
+               style="background:#0073aa;color:#fff;text-decoration:none;
+                      padding:12px 20px;border-radius:4px;display:inline-block;
+                      font-weight:bold;">
+                Set your password
+            </a>
+        </p>';
+    }
+
+    // Optional fallback button if link expired
+    $login_fallback = '<p style="text-align:center;margin:20px 0;">
+        <a href="' . esc_url(wp_login_url()) . '" 
+           style="color:#0073aa;text-decoration:underline;">
+            Log in manually
+        </a>
+    </p>';
+
     $data = [
-        'vendor_name'  => $u->display_name,
-        'vendor_email' => $u->user_email,
-        'reset_link'   => $reset_link,              // use {reset_link} in your template
-        'login_url'    => wp_login_url(),           // optional fallback {login_url}
-        'site_name'    => get_bloginfo('name'),
-        'site_url'     => home_url(),
-        'dashboard_url'=> admin_url('admin.php?page=pm-leads')
+        'vendor_name'    => $u->display_name,
+        'vendor_email'   => $u->user_email,
+        'reset_link'     => $reset_link,   // still available if template needs it
+        'reset_button'   => $button_html,  // ✅ new merge tag
+        'login_fallback' => $login_fallback,
+        'site_name'      => get_bloginfo('name'),
+        'site_url'       => home_url(),
+        'dashboard_url'  => admin_url('admin.php?page=pm-leads')
     ];
 
     pm_leads_send_template('vendor_approved_vendor', $u->user_email, $data);
 }
+
 
 
 
