@@ -306,7 +306,7 @@ add_action('woocommerce_order_status_completed', function ($order_id) {
 
 
 function pm_leads_mark_vendor_approved($vendor_id) {
-    // Avoid duplicate sends for same approval within 5 minutes
+    // Avoid duplicate sends
     if (get_transient('pm_vendor_approved_' . $vendor_id)) return;
     set_transient('pm_vendor_approved_' . $vendor_id, 1, 5 * MINUTE_IN_SECONDS);
 
@@ -325,25 +325,32 @@ function pm_leads_mark_vendor_approved($vendor_id) {
         }
     }
 
-    // Button HTML
+    // Premium Moving brand button style
     $button_html = $reset_link ? '
-        <table role="presentation" cellspacing="0" cellpadding="0" style="margin:25px auto;">
+        <table role="presentation" cellspacing="0" cellpadding="0" style="margin:25px auto;text-align:center;">
             <tr>
-                <td bgcolor="#0073aa" style="border-radius:5px;text-align:center;">
-                    <a href="' . esc_url($reset_link) . '" 
-                       style="font-size:16px;font-family:Arial,sans-serif;
-                              color:#ffffff;text-decoration:none;
-                              padding:12px 24px;display:inline-block;">
-                       Set your password
+                <td style="border-radius:6px;text-align:center;">
+                    <a href="' . esc_url($reset_link) . '"
+                       style="background-color:#C68960;
+                              color:#ffffff;
+                              font-family:Arial,sans-serif;
+                              font-size:16px;
+                              font-weight:600;
+                              text-decoration:none;
+                              padding:12px 28px;
+                              border-radius:6px;
+                              display:inline-block;">
+                        Set your password
                     </a>
                 </td>
             </tr>
         </table>' : '';
 
+    // Subtle fallback link
     $login_fallback = '
         <p style="text-align:center;margin:15px 0;">
-            <a href="' . esc_url(wp_login_url()) . '" 
-               style="color:#0073aa;text-decoration:underline;">
+            <a href="' . esc_url(wp_login_url()) . '"
+               style="color:#C68960;text-decoration:none;font-weight:500;">
                Log in manually
             </a>
         </p>';
@@ -360,45 +367,6 @@ function pm_leads_mark_vendor_approved($vendor_id) {
 
     pm_leads_send_template('vendor_approved_vendor', $u->user_email, $data);
 }
-
-
-    // ✅ Create styled button HTML (safe inline CSS)
-    $button_html = '';
-    if ($reset_link) {
-        $button_html = '<p style="text-align:center;margin:30px 0;">
-            <a href="' . esc_url($reset_link) . '" 
-               style="background:#0073aa;color:#fff;text-decoration:none;
-                      padding:12px 20px;border-radius:4px;display:inline-block;
-                      font-weight:bold;">
-                Set your password
-            </a>
-        </p>';
-    }
-
-    // Optional fallback button if link expired
-    $login_fallback = '<p style="text-align:center;margin:20px 0;">
-        <a href="' . esc_url(wp_login_url()) . '" 
-           style="color:#0073aa;text-decoration:underline;">
-            Log in manually
-        </a>
-    </p>';
-
-    $data = [
-        'vendor_name'    => $u->display_name,
-        'vendor_email'   => $u->user_email,
-        'reset_link'     => $reset_link,   // still available if template needs it
-        'reset_button'   => $button_html,  // ✅ new merge tag
-        'login_fallback' => $login_fallback,
-        'site_name'      => get_bloginfo('name'),
-        'site_url'       => home_url(),
-        'dashboard_url'  => admin_url('admin.php?page=pm-leads')
-    ];
-
-    pm_leads_send_template('vendor_approved_vendor', $u->user_email, $data);
-
-
-
-
 
 function pm_leads_maybe_warn_low_credits($vendor_id) {
     $bal = (int) get_user_meta($vendor_id, 'pm_credit_balance', true);
