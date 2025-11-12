@@ -20,6 +20,8 @@ add_action('init', function () {
     $addr_current  = sanitize_text_field($_POST['current_address'] ?? '');
     $addr_new      = sanitize_text_field($_POST['new_address'] ?? '');
 
+    error_log('PM DEBUG PHONE=' . print_r($_POST, true));
+
     if (!$current || !$new || !$email) {
         wp_die(__('Missing required fields', 'pm-leads'));
     }
