@@ -128,3 +128,75 @@ body.woocommerce-account .pm-dashboard h2{
   color: #deeffc;
 }
 .pm-close{ color: #deeffc; }
+
+/* === PM modal baseline === */
+.pm-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(3px);
+  justify-content: center;
+  align-items: center;
+}
+
+/* Centered modal card */
+.pm-modal-content {
+  background: #0f1821;
+  color: #fff;
+  width: 90%;
+  max-width: 480px;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+  position: relative;
+  text-align: left;
+  font-family: inherit;
+}
+
+/* Close icon */
+.pm-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  font-size: 24px;
+  color: #fff;
+  cursor: pointer;
+  background: none;
+  border: none;
+  line-height: 1;
+}
+
+/* Modal open body lock */
+body.pm-modal-open {
+  overflow: hidden;
+}
+
+/* Buttons inside modal */
+.pm-modal .pm-btn,
+.pm-modal a.pm-btn {
+  display: inline-block;
+  background: #e67336;
+  color: #fff !important;
+  padding: 10px 22px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s ease-in-out;
+}
+
+.pm-modal .pm-btn:hover {
+  background: #ff8647;
+}
+
+.pm-modal[style*="display: block"] .pm-modal-content {
+  animation: pmModalFade 0.25s ease-out;
+}
+
+@keyframes pmModalFade {
+  from {opacity: 0; transform: translateY(-10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
