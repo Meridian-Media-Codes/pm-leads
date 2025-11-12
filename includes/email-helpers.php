@@ -327,24 +327,26 @@ function pm_leads_mark_vendor_approved($vendor_id) {
 
     // Premium Moving brand button style
     $button_html = $reset_link ? '
-        <table role="presentation" cellspacing="0" cellpadding="0" style="margin:25px auto;text-align:center;">
-            <tr>
-                <td style="border-radius:6px;text-align:center;">
-                    <a href="' . esc_url($reset_link) . '"
-                       style="background-color:#C68960;
-                              color:#ffffff;
-                              font-family:Arial,sans-serif;
-                              font-size:16px;
-                              font-weight:600;
-                              text-decoration:none;
-                              padding:12px 28px;
-                              border-radius:6px;
-                              display:inline-block;">
-                        Set your password
-                    </a>
-                </td>
-            </tr>
-        </table>' : '';
+    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:25px auto;text-align:center;">
+        <tr>
+            <td style="border-radius:6px;text-align:center;">
+                <a href="' . esc_url($reset_link) . '"
+                   style="background-color:#C68960;
+                          color:#ffffff;
+                          font-family:Arial,sans-serif;
+                          font-size:16px;
+                          font-weight:600;
+                          text-decoration:none;
+                          padding:10px 24px;
+                          border-radius:6px;
+                          display:inline-block;
+                          line-height:20px;
+                          vertical-align:middle;">
+                    Set your password
+                </a>
+            </td>
+        </tr>
+    </table>' : '';
 
     // Subtle fallback link
     $login_fallback = '
