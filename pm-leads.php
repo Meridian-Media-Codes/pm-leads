@@ -49,3 +49,14 @@ register_deactivation_hook(__FILE__, function () {
 add_action('plugins_loaded', function () {
     load_plugin_textdomain('pm-leads', false, dirname(plugin_basename(__FILE__)) . '/languages');
 });
+
+
+add_action('wp_enqueue_scripts', function() {
+    $base = plugin_dir_url(__FILE__);
+
+    // Existing main style
+    wp_enqueue_style('pm-public', $base . 'assets/css/public.css', [], PM_LEADS_VERSION);
+
+    // ✅ Add vendor dashboard style
+    wp_enqueue_style('pm-vendor-dashboard', $base . 'assets/css/vendor-dashboard.css', ['pm-public'], PM_LEADS_VERSION);
+});
