@@ -33,12 +33,12 @@ function pm_vendor_get_available_leads($user_id) {
         if (!is_array($declined)) $declined = [];
         if (in_array($job_id, $declined, true)) continue;
 
-        // Sold-out?
+        // Sold out
         $limit     = isset($opts['purchase_limit']) ? intval($opts['purchase_limit']) : 5;
         $purchases = intval(get_post_meta($job_id, 'purchase_count', true));
         if ($purchases >= $limit) continue;
 
-        // Distance: vendor → FROM
+        // Distance: vendor to origin
         $from_lat = get_post_meta($job_id, 'pm_job_from_lat', true);
         $from_lng = get_post_meta($job_id, 'pm_job_from_lng', true);
         $to_lat   = get_post_meta($job_id, 'pm_job_to_lat', true);
@@ -105,7 +105,7 @@ add_action('template_redirect', function () {
     $user_id = get_current_user_id();
     $opts    = pm_leads_get_options();
 
-    // Already purchased?
+    // Already purchased
     $buyers = get_post_meta($job_id, 'pm_purchased_by', true);
     if (!is_array($buyers)) $buyers = [];
     if (in_array($user_id, $buyers, true)) {
@@ -159,17 +159,21 @@ add_shortcode('pm_vendor_dashboard', function () {
         'invalid' => 'Invalid request.',
     ];
 
-    // WooCommerce credit product (set your actual product ID here)
-    $credit_product_id = get_option('pm_leads_credit_product_id', 0);
-    $credit_product_url = $credit_product_id ? get_permalink($credit_product_id) : wc_get_cart_url();
+    // Pull prices for modal buttons
+    $credit_prices = get_option('pm_leads_credit_prices', [
+        'price_1'  => 2,
+        'price_5'  => 8,
+        'price_10' => 15,
+    ]);
 
     ob_start();
     ?>
     <div class="pm-dashboard">
         <h2 class="pm-title">Vendor dashboard</h2>
+
         <div class="pm-card pm-card--summary">
             <p class="pm-credit">Credits: <strong><?php echo $balance; ?></strong></p>
-            <button class="pm-btn pm-btn--brand pm-open-credit-modal">Purchase credits</button>
+            <button class="pm-btn pm-btn--brand pm-open-credit-modal" type="button">Purchase credits</button>
         </div>
 
         <?php if ($msg && isset($notices[$msg])): ?>
@@ -248,8 +252,8 @@ add_shortcode('pm_vendor_dashboard', function () {
         </div>
     </div>
 
-    <!-- Lead Details Modal -->
-    <div id="pm-job-modal" class="pm-modal">
+    <!-- Lead details modal -->
+    <div id="pm-job-modal" class="pm-modal" style="display:none">
         <div class="pm-modal-content">
             <span class="pm-close">&times;</span>
             <h3>Lead details</h3>
@@ -257,34 +261,62 @@ add_shortcode('pm_vendor_dashboard', function () {
         </div>
     </div>
 
-    <!-- Credit Purchase Modal -->
-    <div id="pm-credit-modal" class="pm-modal">
+    <!-- Credit purchase modal with 3 options -->
+    <div id="pm-credit-modal" class="pm-modal" style="display:none">
         <div class="pm-modal-content">
             <span class="pm-close">&times;</span>
             <h3>Purchase Credits</h3>
-            <p>You’ll be redirected to checkout to buy more credits.</p>
-            <a href="<?php echo esc_url($credit_product_url); ?>" class="pm-btn pm-btn--brand pm-btn--block">Go to checkout</a>
+            <p>Select a credit bundle</p>
+
+            <p>
+                <a class="pm-btn pm-btn--brand pm-btn--block"
+                   href="<?php echo esc_url( add_query_arg('pm_buy_credits','1', home_url('/')) ); ?>">
+                    Buy 1 credit (£<?php echo esc_html( number_format_i18n($credit_prices['price_1'], 2) ); ?>)
+                </a>
+            </p>
+
+            <p>
+                <a class="pm-btn pm-btn--brand pm-btn--block"
+                   href="<?php echo esc_url( add_query_arg('pm_buy_credits','5', home_url('/')) ); ?>">
+                    Buy 5 credits (£<?php echo esc_html( number_format_i18n($credit_prices['price_5'], 2) ); ?>)
+                </a>
+            </p>
+
+            <p>
+                <a class="pm-btn pm-btn--brand pm-btn--block"
+                   href="<?php echo esc_url( add_query_arg('pm_buy_credits','10', home_url('/')) ); ?>">
+                    Buy 10 credits (£<?php echo esc_html( number_format_i18n($credit_prices['price_10'], 2) ); ?>)
+                </a>
+            </p>
         </div>
     </div>
 
     <script>
     document.addEventListener('click', function(e){
+        // open lead details
         if(e.target.classList.contains('pm-view-job')){
             e.preventDefault();
-            const data = JSON.parse(e.target.dataset.payload);
-            let html='';
+            const data = JSON.parse(e.target.dataset.payload || '{}');
+            let html = '';
             for(const label in data){
                 html += `<p><strong>${label}:</strong> ${data[label] ?? ''}</p>`;
             }
             document.getElementById('pm-job-fields').innerHTML = html;
-            document.getElementById('pm-job-modal').style.display='block';
+            document.getElementById('pm-job-modal').style.display = 'block';
         }
-        if(e.target.classList.contains('pm-close') || e.target.id==='pm-job-modal' || e.target.id==='pm-credit-modal'){
-            document.getElementById('pm-job-modal').style.display='none';
-            document.getElementById('pm-credit-modal').style.display='none';
-        }
+
+        // open credits modal
         if(e.target.classList.contains('pm-open-credit-modal')){
-            document.getElementById('pm-credit-modal').style.display='block';
+            e.preventDefault();
+            document.getElementById('pm-credit-modal').style.display = 'block';
+        }
+
+        // close modals
+        if(e.target.classList.contains('pm-close') ||
+           e.target.id === 'pm-job-modal' ||
+           e.target.id === 'pm-credit-modal'){
+            document.getElementById('pm-job-modal').style.display = 'none';
+            document.getElementById('pm-credit-modal').style.display = 'none';
         }
     });
     </script>
