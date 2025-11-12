@@ -301,10 +301,32 @@ add_action('woocommerce_order_status_completed', function ($order_id) {
 function pm_leads_mark_vendor_approved($vendor_id) {
     $u = get_user_by('id', $vendor_id);
     if (!$u) return;
-    $data = ['vendor_name' => $u->display_name, 'vendor_email' => $u->user_email];
-    pm_leads_send_template('vendor_approved_vendor', $data['vendor_email'], $data);
+
+    // Try to generate a one-time password reset link
+    $reset_link = '';
+    if (function_exists('get_password_reset_key')) {
+        $key = get_password_reset_key($u);
+        if (!is_wp_error($key)) {
+            $reset_link = network_site_url(
+                'wp-login.php?action=rp&key=' . rawurlencode($key) . '&login=' . rawurlencode($u->user_login),
+                'login'
+            );
+        }
+    }
+
+    $data = [
+        'vendor_name'  => $u->display_name,
+        'vendor_email' => $u->user_email,
+        'reset_link'   => $reset_link,              // use {reset_link} in your template
+        'login_url'    => wp_login_url(),           // optional fallback {login_url}
+        'site_name'    => get_bloginfo('name'),
+        'site_url'     => home_url(),
+        'dashboard_url'=> admin_url('admin.php?page=pm-leads')
+    ];
+
+    pm_leads_send_template('vendor_approved_vendor', $u->user_email, $data);
 }
-add_action('pm_leads_vendor_approved', 'pm_leads_mark_vendor_approved', 10, 1);
+
 
 
 function pm_leads_maybe_warn_low_credits($vendor_id) {
