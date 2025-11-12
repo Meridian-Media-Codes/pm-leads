@@ -52,6 +52,7 @@ if (is_wp_error($job_id) || !$job_id) {
 
     update_post_meta($job_id, 'customer_name',    $name);
     update_post_meta($job_id, 'customer_email',   $email);
+    update_post_meta($job_id, 'customer_phone',   sanitize_text_field($_POST['customer_phone'] ?? ''));
     update_post_meta($job_id, 'customer_message', $msg);
 
     update_post_meta($job_id, 'current_address',  $addr_current);
