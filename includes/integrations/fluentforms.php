@@ -52,6 +52,7 @@ add_action('fluentform_submission_inserted', function ($entryId, $formData) {
 
     update_post_meta($job_id, 'customer_name',    $name);
     update_post_meta($job_id, 'customer_email',   $email);
+    update_post_meta($job_id, 'customer_phone',   sanitize_text_field($formData['customer_phone'] ?? ''));
     update_post_meta($job_id, 'customer_message', $msg);
 
     update_post_meta($job_id, 'current_address',  $addr_c);
