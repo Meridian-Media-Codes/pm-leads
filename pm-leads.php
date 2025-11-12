@@ -51,12 +51,19 @@ add_action('plugins_loaded', function () {
 });
 
 
-add_action('wp_enqueue_scripts', function() {
+add_action('wp_enqueue_scripts', function () {
+    if (!function_exists('is_account_page') || !is_account_page()) {
+        return;
+    }
+
     $base = plugin_dir_url(__FILE__);
 
-    // Existing main style
     wp_enqueue_style('pm-public', $base . 'assets/css/public.css', [], PM_LEADS_VERSION);
 
-    // ✅ Add vendor dashboard style
-    wp_enqueue_style('pm-vendor-dashboard', $base . 'assets/css/vendor-dashboard.css', ['pm-public'], PM_LEADS_VERSION);
-});
+    $css_file = PM_LEADS_DIR . 'assets/css/vendor-dashboard.css';
+    $css_url  = $base . 'assets/css/vendor-dashboard.css';
+    $ver      = file_exists($css_file) ? filemtime($css_file) : PM_LEADS_VERSION;
+
+    wp_enqueue_style('pm-vendor-dashboard', $css_url, ['pm-public'], $ver);
+}, 20);
+

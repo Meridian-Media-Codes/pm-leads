@@ -1,190 +1,130 @@
-/* -----------------------------------------------------------
-   Premium Moving - Vendor Dashboard Styling
------------------------------------------------------------ */
-
-:root {
-  --pm-dark: #14222d;
-  --pm-highlight: #bf7d5a;
-  --pm-accent-blue: #325a7a;
-  --pm-light-blue: #88b0cf;
-  --pm-grey: #dad9d7;
-  --pm-font: 'Poppins', sans-serif;
+/* Premium Moving vendor dashboard */
+:root{
+  --pm-bg:#ffffff;
+  --pm-card:#14222d;
+  --pm-card-ink:#dad9d7;
+  --pm-accent:#bf7d5a;
+  --pm-ink:#1a1a1a;
+  --pm-ink-soft:#475569;
+  --pm-surface:#f5f7fb;
+  --pm-border:rgba(0,0,0,.06);
+  --pm-blue:#325a7a;
 }
 
-/* General structure */
-.pm-dashboard {
-  font-family: var(--pm-font);
-  color: var(--pm-dark);
-  background: #fff;
-  padding: 30px;
-  border-radius: 8px;
+body.woocommerce-account .pm-dashboard{
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+  font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-.pm-dashboard h2,
-.pm-dashboard h3 {
-  color: var(--pm-dark);
+/* Card wrapper using existing structure */
+body.woocommerce-account .pm-dashboard h2{
   font-weight: 600;
-  margin-top: 1.2em;
-  margin-bottom: 0.5em;
+  font-size: 28px;
+  margin: 8px 0 20px;
+  color: var(--pm-ink);
 }
 
-.pm-dashboard p {
-  line-height: 1.6;
-  color: #333;
+/* Turn each section into a “card” feel without changing markup */
+.pm-dashboard hr{
+  display: none;
 }
 
-/* Cards (sections like Buy Credits / Available Leads) */
-.pm-dashboard hr {
-  border: none;
-  border-top: 1px solid var(--pm-grey);
-  margin: 30px 0;
+.pm-dashboard h3{
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: var(--pm-card-ink);
 }
 
-.pm-dashboard table {
+/* Card blocks */
+.pm-dashboard .pm-card{
+  background: var(--pm-card);
+  color: var(--pm-card-ink);
+  border-radius: 14px;
+  box-shadow: 0 6px 22px rgba(20,34,45,.18);
+  padding: 18px 18px;
+  margin: 18px 0;
+}
+
+/* Make your existing sections look like cards */
+.pm-dashboard .pm-card + .pm-card{ margin-top: 16px; }
+
+/* Table style for your existing tables */
+.pm-dashboard .pm-table{
   width: 100%;
   border-collapse: collapse;
-  border-radius: 8px;
+  background: rgba(255,255,255,.04);
+  border-radius: 10px;
   overflow: hidden;
-  margin-top: 15px;
 }
 
-.pm-dashboard thead {
-  background: var(--pm-dark);
-  color: #fff;
-  text-transform: uppercase;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-}
-
-.pm-dashboard th,
-.pm-dashboard td {
-  padding: 12px 15px;
+.pm-dashboard .pm-table thead th{
   text-align: left;
+  font-size: 12px;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  padding: 12px 14px;
+  color: #cfd6dc;
+  background: rgba(255,255,255,.04);
 }
 
-.pm-dashboard tbody tr:nth-child(even) {
-  background: #f9f9f9;
+.pm-dashboard .pm-table tbody td{
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: var(--pm-card-ink);
+  vertical-align: middle;
 }
 
-.pm-dashboard tbody tr:hover {
-  background: #eef3f7;
+.pm-dashboard .pm-table tbody tr:hover{
+  background: rgba(255,255,255,.06);
 }
 
 /* Buttons */
 .pm-dashboard .button,
-.pm-dashboard a.button {
-  background-color: var(--pm-highlight);
+.pm-dashboard a.button{
+  background: var(--pm-accent);
   color: #fff !important;
-  font-weight: 600;
-  padding: 10px 18px;
-  border-radius: 6px;
-  border: none;
-  text-decoration: none;
-  transition: background 0.25s ease;
-}
-
-.pm-dashboard .button:hover {
-  background-color: #a66444;
-}
-
-/* Credit modal + job modal */
-.pm-modal {
-  display: none;
-  position: fixed;
-  z-index: 9999;
-  inset: 0;
-  background: rgba(20, 34, 45, 0.85);
-  backdrop-filter: blur(2px);
-}
-
-.pm-modal-content {
-  background: var(--pm-dark);
-  color: #fff;
-  width: 90%;
-  max-width: 480px;
-  margin: 80px auto;
-  padding: 30px;
+  border: 0;
   border-radius: 10px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  text-align: center;
-}
-
-.pm-modal-content h3 {
-  color: #fff;
+  padding: 8px 12px;
+  line-height: 1.1;
   font-weight: 600;
-  margin-bottom: 15px;
+  text-decoration: none !important;
+  box-shadow: 0 4px 14px rgba(191,125,90,.35);
+  transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
 }
 
-.pm-modal-content p {
-  color: #ddd;
+.pm-dashboard .button:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(191,125,90,.45);
 }
 
-.pm-close {
-  float: right;
-  color: #fff;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.pm-close:hover {
-  color: var(--pm-highlight);
-}
-
-/* Modal buttons */
-.pm-modal-content .button {
-  background-color: var(--pm-highlight);
-  color: #fff;
+/* Credit pill near the top */
+.pm-dashboard .pm-credit-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(136,176,207,.16);
+  color: #deeffc;
+  border: 1px solid rgba(136,176,207,.25);
+  padding: 8px 12px;
+  border-radius: 999px;
   font-weight: 600;
-  padding: 10px 22px;
-  margin: 8px auto;
-  display: inline-block;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  margin: 0 0 8px;
 }
 
-.pm-modal-content .button:hover {
-  background-color: #a66444;
+/* Modal tweaks to match brand */
+.pm-modal{
+  background: rgba(20,34,45,.6);
 }
-
-/* Job details modal formatting */
-#pm-job-fields p {
-  color: #ddd;
-  font-size: 14px;
-  text-align: left;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  padding: 6px 0;
+.pm-modal-content{
+  background: var(--pm-card);
+  color: var(--pm-card-ink);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 20px 60px rgba(20,34,45,.5);
 }
-
-#pm-job-fields strong {
-  width: 150px;
-  display: inline-block;
-  color: var(--pm-light-blue);
+#pm-job-fields strong{
+  color: #deeffc;
 }
-
-/* Table adjustments for mobile */
-@media (max-width: 768px) {
-  .pm-dashboard table,
-  .pm-dashboard thead,
-  .pm-dashboard tbody,
-  .pm-dashboard th,
-  .pm-dashboard td,
-  .pm-dashboard tr {
-    display: block;
-  }
-
-  .pm-dashboard tr {
-    margin-bottom: 15px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    padding: 10px;
-  }
-
-  .pm-dashboard td {
-    padding: 8px;
-    border: none;
-  }
-
-  .pm-dashboard th {
-    display: none;
-  }
-}
+.pm-close{ color: #deeffc; }
