@@ -47,9 +47,16 @@ function pm_leads_save_email_template($key, $data) {
 
 function pm_leads_apply_merge_tags($text, $data = []) {
     if (!is_array($data)) $data = [];
+
     foreach ($data as $tag => $value) {
-        $text = str_replace('{'.$tag.'}', (string) $value, $text);
+        // Allow safe HTML only for specific tags
+        if (in_array($tag, ['reset_button', 'login_fallback'], true)) {
+            $text = str_replace('{' . $tag . '}', $value, $text); // unescaped HTML
+        } else {
+            $text = str_replace('{' . $tag . '}', esc_html($value), $text);
+        }
     }
+
     return $text;
 }
 
