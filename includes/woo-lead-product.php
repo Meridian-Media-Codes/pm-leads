@@ -49,7 +49,9 @@ function pm_leads_create_wc_product_for_job($job_id) {
 
     // Simple product
     update_post_meta($product_id, '_manage_stock', 'yes');
-    update_post_meta($product_id, '_stock', 5);          // ✅ only 5 available
+    $limit = isset($opts['purchase_limit']) ? (int) $opts['purchase_limit'] : 5;
+    update_post_meta($product_id, '_stock', $limit);
+
     update_post_meta($product_id, '_stock_status', 'instock');
     update_post_meta($product_id, '_sold_individually', 'yes');
 
@@ -103,7 +105,14 @@ add_action('woocommerce_order_status_completed', function($order_id) {
 
         // Count how many have bought
         $count = intval(get_post_meta($job_id, 'purchase_count', true));
-        $limit = 5;  // job max
+
+       // Get per-job limit or fall back to global default
+         $limit = (int) get_post_meta($job_id, 'purchase_limit', true);
+         if (!$limit) {
+    $opts  = function_exists('pm_leads_get_options') ? pm_leads_get_options() : [];
+    $limit = isset($opts['purchase_limit']) ? (int) $opts['purchase_limit'] : 5;
+}
+
 
         $new_stock = max(0, $limit - $count);
         update_post_meta($pid, '_stock', $new_stock);
