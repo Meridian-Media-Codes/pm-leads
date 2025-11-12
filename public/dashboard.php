@@ -170,15 +170,6 @@ add_action('template_redirect', function () {
     exit;
 });
 
-
-
-/**
- * Shortcode: Vendor Dashboard
- */
-/**
- * Shortcode: Vendor Dashboard
- */
-<?php
 if (!defined('ABSPATH')) exit;
 
 /**
