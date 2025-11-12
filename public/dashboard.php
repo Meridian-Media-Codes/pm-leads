@@ -159,19 +159,17 @@ add_shortcode('pm_vendor_dashboard', function () {
         'invalid' => 'Invalid request.',
     ];
 
-    $credit_prices = get_option('pm_leads_credit_prices', [
-        'price_1'  => 2,
-        'price_5'  => 8,
-        'price_10' => 15,
-    ]);
+    // WooCommerce credit product (set your actual product ID here)
+    $credit_product_id = get_option('pm_leads_credit_product_id', 0);
+    $credit_product_url = $credit_product_id ? get_permalink($credit_product_id) : wc_get_cart_url();
 
     ob_start();
     ?>
     <div class="pm-dashboard">
         <h2 class="pm-title">Vendor dashboard</h2>
-        <div class="pm-card">
+        <div class="pm-card pm-card--summary">
             <p class="pm-credit">Credits: <strong><?php echo $balance; ?></strong></p>
-            <button class="button pm-open-credit-modal">Purchase credits</button>
+            <button class="pm-btn pm-btn--brand pm-open-credit-modal">Purchase credits</button>
         </div>
 
         <?php if ($msg && isset($notices[$msg])): ?>
@@ -184,15 +182,17 @@ add_shortcode('pm_vendor_dashboard', function () {
                 <p>No leads available in your area.</p>
             <?php else: ?>
                 <table class="pm-table">
-                    <thead><tr>
-                        <th>ID</th><th>From</th><th>To</th>
-                        <th>Dist to origin (mi)</th><th>Job distance (mi)</th>
-                        <th>Purchases</th><th>Actions</th>
-                    </tr></thead>
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>From</th><th>To</th>
+                            <th>Dist to origin (mi)</th><th>Job distance (mi)</th>
+                            <th>Purchases</th><th>Actions</th>
+                        </tr>
+                    </thead>
                     <tbody>
                     <?php foreach ($available as $row):
                         $job_id  = $row['job_id'];
-        $product = intval(get_post_meta($job_id, '_pm_lead_product_id', true)); ?>
+                        $product = intval(get_post_meta($job_id, '_pm_lead_product_id', true)); ?>
                         <tr>
                             <td>#<?php echo $job_id; ?></td>
                             <td><?php echo esc_html($row['from']); ?></td>
@@ -203,10 +203,11 @@ add_shortcode('pm_vendor_dashboard', function () {
                             <td>
                                 <a href="<?php echo esc_url(add_query_arg([
                                     'pm_buy_lead' => $job_id,
-                                    '_wpnonce' => wp_create_nonce('pm_buy_lead_' . $job_id),
-                                ])); ?>" class="button pm-btn">Buy with 1 credit</a>
+                                    '_wpnonce'    => wp_create_nonce('pm_buy_lead_' . $job_id),
+                                ])); ?>" class="pm-btn pm-btn--sm pm-btn--brand">Buy with 1 credit</a>
+
                                 <?php if ($product): ?>
-                                    <a href="<?php echo esc_url(get_permalink($product)); ?>" class="button pm-btn-outline">Buy now</a>
+                                    <a href="<?php echo esc_url(get_permalink($product)); ?>" class="pm-btn pm-btn--sm">Buy now</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -247,7 +248,7 @@ add_shortcode('pm_vendor_dashboard', function () {
         </div>
     </div>
 
-    <!-- Job modal -->
+    <!-- Lead Details Modal -->
     <div id="pm-job-modal" class="pm-modal">
         <div class="pm-modal-content">
             <span class="pm-close">&times;</span>
@@ -256,15 +257,13 @@ add_shortcode('pm_vendor_dashboard', function () {
         </div>
     </div>
 
-    <!-- Credit modal -->
+    <!-- Credit Purchase Modal -->
     <div id="pm-credit-modal" class="pm-modal">
         <div class="pm-modal-content">
             <span class="pm-close">&times;</span>
-            <h3>Purchase credits</h3>
-            <p>Select a credit bundle</p>
-            <p><a class="button pm-buy-credit" data-qty="1">Buy 1 credit (£<?php echo $credit_prices['price_1']; ?>)</a></p>
-            <p><a class="button pm-buy-credit" data-qty="5">Buy 5 credits (£<?php echo $credit_prices['price_5']; ?>)</a></p>
-            <p><a class="button pm-buy-credit" data-qty="10">Buy 10 credits (£<?php echo $credit_prices['price_10']; ?>)</a></p>
+            <h3>Purchase Credits</h3>
+            <p>You’ll be redirected to checkout to buy more credits.</p>
+            <a href="<?php echo esc_url($credit_product_url); ?>" class="pm-btn pm-btn--brand pm-btn--block">Go to checkout</a>
         </div>
     </div>
 
@@ -275,7 +274,7 @@ add_shortcode('pm_vendor_dashboard', function () {
             const data = JSON.parse(e.target.dataset.payload);
             let html='';
             for(const label in data){
-                html += `<p><strong>${label}:</strong> ${data[label]??''}</p>`;
+                html += `<p><strong>${label}:</strong> ${data[label] ?? ''}</p>`;
             }
             document.getElementById('pm-job-fields').innerHTML = html;
             document.getElementById('pm-job-modal').style.display='block';
@@ -286,10 +285,6 @@ add_shortcode('pm_vendor_dashboard', function () {
         }
         if(e.target.classList.contains('pm-open-credit-modal')){
             document.getElementById('pm-credit-modal').style.display='block';
-        }
-        if(e.target.classList.contains('pm-buy-credit')){
-            const qty = e.target.dataset.qty;
-            window.location = "<?php echo home_url('/'); ?>?pm_buy_credits="+qty;
         }
     });
     </script>
