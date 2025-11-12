@@ -52,21 +52,29 @@ add_action('plugins_loaded', function () {
 
 
 add_action('wp_enqueue_scripts', function () {
-    if (!function_exists('is_account_page') || !is_account_page()) {
+    // Load only when vendor dashboard shortcode is present or on account page
+    global $post;
+
+    $should_load = function_exists('is_account_page') && is_account_page();
+
+    if (!$should_load && isset($post->post_content) && has_shortcode($post->post_content, 'pm_vendor_dashboard')) {
+        $should_load = true;
+    }
+
+    if (!$should_load) {
         return;
     }
 
     $base = plugin_dir_url(__FILE__);
 
-    // Base public CSS (if you use it)
     wp_enqueue_style('pm-public', $base . 'assets/css/public.css', [], PM_LEADS_VERSION);
 
-    // Vendor dashboard CSS
     $css_file = PM_LEADS_DIR . 'assets/css/vendor-dashboard.css';
     $css_url  = $base . 'assets/css/vendor-dashboard.css';
     $ver      = file_exists($css_file) ? filemtime($css_file) : PM_LEADS_VERSION;
 
     wp_enqueue_style('pm-vendor-dashboard', $css_url, ['pm-public'], $ver);
 }, 20);
+
 
 
