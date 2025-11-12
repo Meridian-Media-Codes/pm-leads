@@ -395,7 +395,7 @@ function pm_leads_mark_vendor_approved($vendor_id) {
     ];
 
     pm_leads_send_template('vendor_approved_vendor', $u->user_email, $data);
-}
+
 
 
 
