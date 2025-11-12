@@ -35,7 +35,7 @@ function pm_leads_save_email_template($key, $data) {
     $all[$key] = [
         'enabled' => !empty($data['enabled']) ? 1 : 0,
         'subject' => sanitize_text_field($data['subject'] ?? ''),
-        'body'    => wp_kses_post($data['body'] ?? ''),
+        'body' => $data['body'] ?? '',
     ];
 
     update_option(PM_LEADS_EMAIL_OPT, $all, false);
@@ -306,10 +306,14 @@ add_action('woocommerce_order_status_completed', function ($order_id) {
 
 
 function pm_leads_mark_vendor_approved($vendor_id) {
+    // Avoid duplicate sends for same approval within 5 minutes
+    if (get_transient('pm_vendor_approved_' . $vendor_id)) return;
+    set_transient('pm_vendor_approved_' . $vendor_id, 1, 5 * MINUTE_IN_SECONDS);
+
     $u = get_user_by('id', $vendor_id);
     if (!$u) return;
 
-    // Generate one-time password reset link
+    // Generate reset link
     $reset_link = '';
     if (function_exists('get_password_reset_key')) {
         $key = get_password_reset_key($u);
@@ -320,6 +324,43 @@ function pm_leads_mark_vendor_approved($vendor_id) {
             );
         }
     }
+
+    // Button HTML
+    $button_html = $reset_link ? '
+        <table role="presentation" cellspacing="0" cellpadding="0" style="margin:25px auto;">
+            <tr>
+                <td bgcolor="#0073aa" style="border-radius:5px;text-align:center;">
+                    <a href="' . esc_url($reset_link) . '" 
+                       style="font-size:16px;font-family:Arial,sans-serif;
+                              color:#ffffff;text-decoration:none;
+                              padding:12px 24px;display:inline-block;">
+                       Set your password
+                    </a>
+                </td>
+            </tr>
+        </table>' : '';
+
+    $login_fallback = '
+        <p style="text-align:center;margin:15px 0;">
+            <a href="' . esc_url(wp_login_url()) . '" 
+               style="color:#0073aa;text-decoration:underline;">
+               Log in manually
+            </a>
+        </p>';
+
+    $data = [
+        'vendor_name'    => $u->display_name,
+        'vendor_email'   => $u->user_email,
+        'reset_button'   => $button_html,
+        'login_fallback' => $login_fallback,
+        'site_name'      => get_bloginfo('name'),
+        'site_url'       => home_url(),
+        'dashboard_url'  => admin_url('admin.php?page=pm-leads')
+    ];
+
+    pm_leads_send_template('vendor_approved_vendor', $u->user_email, $data);
+}
+
 
     // ✅ Create styled button HTML (safe inline CSS)
     $button_html = '';
