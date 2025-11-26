@@ -131,22 +131,17 @@ body.woocommerce-account .pm-dashboard h2{
 
 /* === PM modal baseline === */
 .pm-modal {
+  display: none;
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 999999;        /* keep it above Kadence header */
+  z-index: 999999;
   background: rgba(0,0,0,0.7);
   backdrop-filter: blur(3px);
-
-  /* centering fix */
-  display: flex !important;
+  display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.pm-modal.display-flex {
-    display: flex !important;
 }
 
 
