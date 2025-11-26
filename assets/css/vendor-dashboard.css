@@ -23,7 +23,7 @@ body.woocommerce-account .pm-dashboard h2{
   font-weight: 600;
   font-size: 28px;
   margin: 8px 0 20px;
-  color: var(--pm-ink);
+  color: #ffffff;
 }
 
 /* Turn each section into a “card” feel without changing markup */
@@ -131,17 +131,20 @@ body.woocommerce-account .pm-dashboard h2{
 
 /* === PM modal baseline === */
 .pm-modal {
-  display: none;
   position: fixed;
-  z-index: 9999;
   inset: 0;
   width: 100%;
   height: 100%;
+  z-index: 999999;        /* keep it above Kadence header */
   background: rgba(0,0,0,0.7);
   backdrop-filter: blur(3px);
+
+  /* centering fix */
+  display: flex !important;
   justify-content: center;
   align-items: center;
 }
+
 
 /* Centered modal card */
 .pm-modal-content {
