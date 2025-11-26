@@ -212,3 +212,28 @@ body.pm-modal-open {
 body.woocommerce-account .pm-dashboard {
     background: rgba(20, 34, 45, 0.9) !important;
 }
+
+
+
+
+
+
+/* Center-align all content inside the modal */
+.pm-modal-content {
+    text-align: center;
+}
+
+/* Make the modal title white */
+.pm-modal-content h3 {
+    color: #ffffff !important;
+    text-align: center;
+}
+
+/* Equal-width credit buttons */
+.pm-modal-content .pm-btn {
+    display: block;
+    width: 100%;
+    max-width: 260px; /* adjust as needed */
+    margin: 0 auto 14px;
+    text-align: center;
+}
