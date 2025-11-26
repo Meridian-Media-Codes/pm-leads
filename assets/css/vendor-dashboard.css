@@ -19,7 +19,8 @@ body.woocommerce-account .pm-dashboard{
 }
 
 /* Card wrapper using existing structure */
-body.woocommerce-account .pm-dashboard h2{
+body.woocommerce-account .pm-dashboard h2.pm-title,
+body.woocommerce-account .pm-dashboard .pm-title {
   font-weight: 600;
   font-size: 28px;
   margin: 8px 0 20px;
