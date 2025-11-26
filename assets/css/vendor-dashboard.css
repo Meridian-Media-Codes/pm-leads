@@ -23,7 +23,7 @@ body.woocommerce-account .pm-dashboard h2{
   font-weight: 600;
   font-size: 28px;
   margin: 8px 0 20px;
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 /* Turn each section into a “card” feel without changing markup */
