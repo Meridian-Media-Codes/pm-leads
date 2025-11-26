@@ -244,9 +244,19 @@ body.woocommerce-account .pm-dashboard {
 }
 
 
+/* Brand colour override for all dashboard buttons */
+.pm-dashboard .pm-btn,
+.pm-dashboard a.pm-btn,
+.pm-dashboard .button,
+.pm-dashboard a.button {
+    background: #bf7d5a !important;
+    box-shadow: 0 4px 14px rgba(191,125,90,.35) !important;
+}
+
+/* Brand colour for clickable table links */
 .pm-dashboard .pm-table a {
     color: #bf7d5a !important;
 }
 .pm-dashboard .pm-table a:hover {
-    color: #d89f80 !important; /* lighter brand shade */
+    color: #d89f80 !important;
 }
