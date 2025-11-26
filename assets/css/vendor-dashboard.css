@@ -188,7 +188,7 @@ body.pm-modal-open {
 .pm-modal .pm-btn,
 .pm-modal a.pm-btn {
   display: inline-block;
-  background: #e67336;
+  background: #BF7D5A;
   color: #fff !important;
   padding: 10px 22px;
   border-radius: 6px;
@@ -241,4 +241,12 @@ body.woocommerce-account .pm-dashboard {
 
 .pm-dashboard h2.pm-title {
     color: #ffffff !important;
+}
+
+
+.pm-dashboard .pm-table a {
+    color: #bf7d5a !important;
+}
+.pm-dashboard .pm-table a:hover {
+    color: #d89f80 !important; /* lighter brand shade */
 }
