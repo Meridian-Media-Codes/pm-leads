@@ -145,6 +145,10 @@ body.woocommerce-account .pm-dashboard h2{
   align-items: center;
 }
 
+.pm-modal.display-flex {
+    display: flex !important;
+}
+
 
 /* Centered modal card */
 .pm-modal-content {
