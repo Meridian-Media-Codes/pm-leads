@@ -238,3 +238,7 @@ body.woocommerce-account .pm-dashboard {
     margin: 0 auto 14px;
     text-align: center;
 }
+
+.pm-dashboard h2.pm-title {
+    color: #ffffff !important;
+}
