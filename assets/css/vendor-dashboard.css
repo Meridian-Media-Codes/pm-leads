@@ -141,7 +141,7 @@ body.woocommerce-account .pm-dashboard h2{
   backdrop-filter: blur(3px);
   justify-content: center;
   align-items: center;
-  display: flex !important;
+  display: flex;
   justify-content: center;
   align-items: center;
 }
