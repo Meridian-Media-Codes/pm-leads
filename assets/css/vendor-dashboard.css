@@ -1,6 +1,6 @@
 /* Premium Moving vendor dashboard */
 :root{
-  --pm-bg:#ffffff;
+  --pm-bg:rgba(20, 34, 45, 0.9);
   --pm-card:#14222d;
   --pm-card-ink:#dad9d7;
   --pm-accent:#bf7d5a;
