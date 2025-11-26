@@ -200,3 +200,14 @@ body.pm-modal-open {
   from {opacity: 0; transform: translateY(-10px);}
   to {opacity: 1; transform: translateY(0);}
 }
+
+
+
+
+
+
+
+
+.pm-dashboard {
+    outline: 5px solid red !important;
+}
