@@ -20,7 +20,7 @@ function pm_leads_register_cpt_job() {
     $args = [
     'labels'             => $labels,
     'public'             => false,
-    'show_ui'            => false,      // Hides job UI completely
+    'show_ui'            => true,      // Hides job UI completely
     'show_in_menu'       => false,
     'capability_type'    => 'post',
     'map_meta_cap'       => true,
