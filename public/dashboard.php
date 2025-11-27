@@ -246,9 +246,12 @@ add_shortcode('pm_vendor_dashboard', function () {
                                     '_wpnonce'    => wp_create_nonce('pm_buy_lead_' . $job_id),
                                 ])); ?>" class="pm-btn pm-btn--sm pm-btn--brand">Buy with 1 credit</a>
 
-                                <?php if ($product): ?>
-                                    <a href="<?php echo esc_url(get_permalink($product)); ?>" class="pm-btn pm-btn--sm">Buy now</a>
-                                <?php endif; ?>
+                                <?php /* 
+                                    if ($product): ?>
+                                        <a href="<?php echo esc_url(get_permalink($product)); ?>" class="pm-btn pm-btn--sm">Buy now</a>
+                                    <?php endif; 
+                                */ ?>
+
                             </td>
                         </tr>
                     <?php endforeach; ?>
