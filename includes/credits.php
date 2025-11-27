@@ -302,6 +302,12 @@ function pm_leads_handle_buy_with_credits() {
     pm_leads_mark_vendor_bought($job_id, $vendor_id);
     $new_count = pm_leads_inc_purchase_count($job_id);
 
+    // Full stock sync after credit purchase
+    if (function_exists('pm_leads_sync_job_stock')) {
+    pm_leads_sync_job_stock($job_id);
+    }
+
+
     /* Stock sync if Woo product exists */
     $product_id = pm_leads_get_job_product_id($job_id);
     if ($product_id) {

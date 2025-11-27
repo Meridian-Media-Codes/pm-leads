@@ -140,9 +140,11 @@ add_action('template_redirect', function () {
     // Deduct one credit
     update_user_meta($user_id, 'pm_credit_balance', max(0, $bal - 1));
 
-    // Mark as purchased and bump purchase count (this also syncs stock)
-    pm_leads_mark_vendor_bought($job_id, $user_id);
-    $new_count = pm_leads_inc_purchase_count($job_id);
+    // Always run full stock sync
+    if (function_exists('pm_leads_sync_job_stock')) {
+    pm_leads_sync_job_stock($job_id);
+    }
+
 
     // Optional extra stock decrement for the Woo product (pm_leads_inc_purchase_count already syncs)
     if (function_exists('pm_leads_get_job_product_id') && function_exists('pm_leads_reduce_stock')) {

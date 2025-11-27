@@ -175,6 +175,11 @@ add_action('save_post_pm_job', function ($post_id) {
 
 }, 10);
 
+add_action('save_post_pm_job', function($post_id) {
+    if (function_exists('pm_leads_sync_job_stock')) {
+        pm_leads_sync_job_stock($post_id);
+    }
+}, 20);
 
 
 
