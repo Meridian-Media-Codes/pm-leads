@@ -130,18 +130,21 @@ function pm_leads_job_meta_box_html($post) {
 /**
  * Save handler
  */
+/**
+ * Save handler
+ */
 add_action('save_post_pm_job', function ($post_id) {
 
+    // Security & capability checks
     if (!isset($_POST['pm_job_meta_nonce']) || !wp_verify_nonce($_POST['pm_job_meta_nonce'], 'pm_job_meta_save'))
         return;
-
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
         return;
-
     if (!current_user_can('edit_post', $post_id))
         return;
 
-    $fields = [
+    // Fields to save (text)
+    $text_fields = [
         'customer_name',
         'customer_email',
         'customer_phone',
@@ -151,35 +154,35 @@ add_action('save_post_pm_job', function ($post_id) {
         'bedrooms_current',
         'new_postcode',
         'new_address',
-        'bedrooms_new',
-        'purchase_count'
+        'bedrooms_new'
     ];
 
-    foreach ($fields as $key) {
+    foreach ($text_fields as $key) {
         if (isset($_POST[$key])) {
             update_post_meta($post_id, $key, sanitize_text_field($_POST[$key]));
         }
     }
 
-    // ✅ Now re-geocode
-    $current = sanitize_text_field($_POST['current_postcode'] ?? '');
-    $new     = sanitize_text_field($_POST['new_postcode'] ?? '');
+    // Purchases (integer)
+    if (isset($_POST['purchase_count'])) {
+        $count = max(0, intval($_POST['purchase_count']));
+        update_post_meta($post_id, 'purchase_count', $count);
+    }
 
-        if ($current) pm_job_geocode($post_id, $current, 'pm_job_from');
-    if ($new)     pm_job_geocode($post_id, $new,     'pm_job_to');
+    // Re-geocode locations
+    $current_postcode = sanitize_text_field($_POST['current_postcode'] ?? '');
+    $new_postcode     = sanitize_text_field($_POST['new_postcode'] ?? '');
 
-    // Keep linked Woo product stock in sync when Purchases is edited in admin
+    if ($current_postcode) {
+        pm_job_geocode($post_id, $current_postcode, 'pm_job_from');
+    }
+    if ($new_postcode) {
+        pm_job_geocode($post_id, $new_postcode, 'pm_job_to');
+    }
+
+    // 🔥 Sync WooCommerce stock ONCE — unified reliable sync
     if (function_exists('pm_leads_sync_job_stock')) {
         pm_leads_sync_job_stock($post_id);
     }
 
-}, 10);
-
-add_action('save_post_pm_job', function($post_id) {
-    if (function_exists('pm_leads_sync_job_stock')) {
-        pm_leads_sync_job_stock($post_id);
-    }
 }, 20);
-
-
-

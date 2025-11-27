@@ -58,19 +58,27 @@ if (!function_exists('pm_leads_get_job_product_id')) {
 /** Sync WooCommerce stock to remaining purchase capacity for a job */
 if (!function_exists('pm_leads_sync_job_stock')) {
     function pm_leads_sync_job_stock($job_id) {
+
+        // Get linked Woo product ID for this job
         $product_id = pm_leads_get_job_product_id($job_id);
-        if (!$product_id || !class_exists('WC_Product')) {
+        if (!$product_id) {
             return;
         }
 
-        $opts   = pm_leads_opts();
-        $limit  = isset($opts['purchase_limit']) ? (int) $opts['purchase_limit'] : 5;
+        // Make sure WooCommerce is available
+        if (!function_exists('wc_get_product')) {
+            return;
+        }
+
+        $opts  = pm_leads_opts();
+        $limit = isset($opts['purchase_limit']) ? (int) $opts['purchase_limit'] : 5;
         if ($limit < 1) {
             $limit = 1;
         }
 
-        $count      = pm_leads_get_purchase_count($job_id);
-        $remaining  = max(0, $limit - $count);
+        // Current number of vendors who bought this job
+        $count     = pm_leads_get_purchase_count($job_id);
+        $remaining = max(0, $limit - $count);
 
         $product = wc_get_product($product_id);
         if (!$product) {
@@ -83,6 +91,7 @@ if (!function_exists('pm_leads_sync_job_stock')) {
         $product->save();
     }
 }
+
 
 
 /** Purchase count for a job */
@@ -231,9 +240,6 @@ add_action('woocommerce_order_status_completed', function ($order_id) {
         // Mark purchased
         pm_leads_mark_vendor_bought($job_id, $user_id);
         $new_count = pm_leads_inc_purchase_count($job_id);
-
-        // Stock sync
-        pm_leads_reduce_stock($pid);
 
         // Fire unified purchase event for email
         do_action('pm_lead_purchased_with_credits', $job_id, $user_id);

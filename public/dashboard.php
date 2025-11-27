@@ -140,24 +140,20 @@ add_action('template_redirect', function () {
     // Deduct one credit
     update_user_meta($user_id, 'pm_credit_balance', max(0, $bal - 1));
 
-    // Always run full stock sync
-    if (function_exists('pm_leads_sync_job_stock')) {
-    pm_leads_sync_job_stock($job_id);
+    // Register the purchase against this vendor + increment purchase_count
+    if (function_exists('pm_leads_mark_vendor_bought')) {
+        pm_leads_mark_vendor_bought($job_id, $user_id);
     }
 
+    // This increments `purchase_count` AND calls `pm_leads_sync_job_stock()`
+    $new_count = function_exists('pm_leads_inc_purchase_count')
+        ? pm_leads_inc_purchase_count($job_id)
+        : $count + 1;
 
-    // Optional extra stock decrement for the Woo product (pm_leads_inc_purchase_count already syncs)
-    if (function_exists('pm_leads_get_job_product_id') && function_exists('pm_leads_reduce_stock')) {
-        $product_id = pm_leads_get_job_product_id($job_id);
-        if ($product_id) {
-            pm_leads_reduce_stock($product_id);
-        }
-    }
-
-    // Unified hook → existing email templates
+    // Fire unified hook → existing email templates
     do_action('pm_lead_purchased_with_credits', $job_id, $user_id);
 
-    // Mark job as sold_out if limit reached
+    // Sold out taxonomy if limit reached
     if ($new_count >= $limit) {
         $term = term_exists('sold_out', 'pm_job_status');
         if (!$term) {
@@ -174,6 +170,7 @@ add_action('template_redirect', function () {
     wp_safe_redirect(add_query_arg('pm_msg', 'ok', $back));
     exit;
 });
+
 
 
 /**
