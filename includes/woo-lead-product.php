@@ -75,8 +75,10 @@ function pm_leads_create_wc_product_for_job($job_id) {
     // Link product → job
     update_post_meta($product_id, '_pm_job_id', $job_id);
 
-    // Link job → product
+    // Link job → product (both keys for backwards compatibility)
+    update_post_meta($job_id, '_pm_lead_product_id', $product_id);
     update_post_meta($job_id, '_pm_wc_product_id', $product_id);
+
 
     // Ensure purchase_count is initialised
     if (get_post_meta($job_id, 'purchase_count', true) === '') {
