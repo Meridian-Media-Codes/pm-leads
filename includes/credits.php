@@ -40,19 +40,24 @@ if (!function_exists('pm_leads_opts')) {
 if (!function_exists('pm_leads_get_job_product_id')) {
     function pm_leads_get_job_product_id($job_id) {
 
-        // Correct PRIMARY meta key for all jobs
+        // Primary correct key
         $pid = intval(get_post_meta($job_id, '_pm_wc_product_id', true));
-
         if ($pid > 0) {
             return $pid;
         }
 
-        // Legacy fallback if any very old jobs used this
+        // Fallback (your form currently writes here)
         $legacy = intval(get_post_meta($job_id, '_pm_lead_product_id', true));
+        if ($legacy > 0) {
+            // Auto-heal so future calls succeed
+            update_post_meta($job_id, '_pm_wc_product_id', $legacy);
+            return $legacy;
+        }
 
-        return $legacy > 0 ? $legacy : 0;
+        return 0;
     }
 }
+
 
 
 /** Sync WooCommerce stock to remaining purchase capacity for a job */
