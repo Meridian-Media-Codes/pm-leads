@@ -39,16 +39,21 @@ if (!function_exists('pm_leads_opts')) {
 /** Get Woo product ID linked to a job */
 if (!function_exists('pm_leads_get_job_product_id')) {
     function pm_leads_get_job_product_id($job_id) {
-        // New key used by the dashboard / job creator
-        $pid = absint(get_post_meta($job_id, '_pm_lead_product_id', true));
 
-        // Back-compat: older builds may have used a different key
-        if (!$pid) {
-            $pid = absint(get_post_meta($job_id, '_pm_wc_product_id', true));
+        // Correct PRIMARY meta key for all jobs
+        $pid = intval(get_post_meta($job_id, '_pm_wc_product_id', true));
+
+        if ($pid > 0) {
+            return $pid;
         }
-        return $pid;
+
+        // Legacy fallback if any very old jobs used this
+        $legacy = intval(get_post_meta($job_id, '_pm_lead_product_id', true));
+
+        return $legacy > 0 ? $legacy : 0;
     }
 }
+
 
 /** Sync WooCommerce stock to remaining purchase capacity for a job */
 if (!function_exists('pm_leads_sync_job_stock')) {
