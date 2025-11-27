@@ -25,7 +25,7 @@ function pm_leads_register_cpt_job() {
     'capability_type'    => 'post',
     'map_meta_cap'       => true,
     'hierarchical'       => false,
-    'supports'           => ['title', 'custom-fields'],
+    'supports'           => ['title', 'custom-fields', 'editor'],
     'has_archive'        => false,
     'rewrite'            => false,
 ];
