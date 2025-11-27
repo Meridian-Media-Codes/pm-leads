@@ -343,17 +343,46 @@ function pm_leads_render_jobs() {
     if (!current_user_can('manage_options')) return;
 
     if (isset($_POST['pm_job_nonce']) && wp_verify_nonce($_POST['pm_job_nonce'], 'pm_job_save')) {
-        $job_id = absint($_POST['job_id'] ?? 0);
-        if ($job_id) {
-            $fields = ['customer_name','customer_email','customer_phone','customer_message','current_postcode','current_address','bedrooms_current','new_postcode','new_address','bedrooms_new','purchase_count'];
-            foreach ($fields as $key) if (isset($_POST[$key])) update_post_meta($job_id,$key,sanitize_text_field($_POST[$key]));
-            $current = sanitize_text_field($_POST['current_postcode'] ?? '');
-            $new     = sanitize_text_field($_POST['new_postcode'] ?? '');
-            if ($current && function_exists('pm_job_geocode')) pm_job_geocode($job_id,$current,'pm_job_from');
-            if ($new && function_exists('pm_job_geocode'))     pm_job_geocode($job_id,$new,'pm_job_to');
-            echo '<div class="updated notice"><p>Job updated.</p></div>';
+
+    $job_id = absint($_POST['job_id'] ?? 0);
+
+    if ($job_id) {
+
+        // Fields to save
+        $fields = [
+            'customer_name','customer_email','customer_phone','customer_message',
+            'current_postcode','current_address','bedrooms_current',
+            'new_postcode','new_address','bedrooms_new','purchase_count',
+            '_pm_wc_product_id'
+        ];
+
+        foreach ($fields as $key) {
+            if (isset($_POST[$key])) {
+                update_post_meta($job_id, $key, sanitize_text_field($_POST[$key]));
+            }
         }
+
+        // Sync WooCommerce stock immediately
+        if (function_exists('pm_leads_sync_job_stock')) {
+            pm_leads_sync_job_stock($job_id);
+        }
+
+        // Re-geocode
+        $current = sanitize_text_field($_POST['current_postcode'] ?? '');
+        $new     = sanitize_text_field($_POST['new_postcode'] ?? '');
+
+        if ($current && function_exists('pm_job_geocode')) {
+            pm_job_geocode($job_id, $current, 'pm_job_from');
+        }
+
+        if ($new && function_exists('pm_job_geocode')) {
+            pm_job_geocode($job_id, $new, 'pm_job_to');
+        }
+
+        echo '<div class="updated notice"><p>Job updated.</p></div>';
     }
+}
+
 
     if (!empty($_GET['job_id'])) {
         $job_id = absint($_GET['job_id']);
@@ -361,6 +390,7 @@ function pm_leads_render_jobs() {
         if (!$job || $job->post_type !== 'pm_job') { echo '<div class="wrap"><h1>Job not found</h1></div>'; return; }
 
         $fields = [
+            '_pm_wc_product_id' => 'Linked Woo Product ID',
             'customer_name'=>'Customer Name','customer_email'=>'Customer Email','customer_phone'=>'Customer Phone','customer_message'=>'Customer Message',
             'current_postcode'=>'Current Postcode','current_address'=>'Current Address','bedrooms_current'=>'Current Bedrooms',
             'new_postcode'=>'New Postcode','new_address'=>'New Address','bedrooms_new'=>'New Bedrooms','purchase_count'=>'Purchases'
@@ -418,6 +448,8 @@ function pm_leads_render_jobs() {
         echo '<tr><td colspan="6">No jobs yet.</td></tr>';
     }
     echo '</tbody></table></div>';
+
+    
 }
 
 /* ---------------------------
