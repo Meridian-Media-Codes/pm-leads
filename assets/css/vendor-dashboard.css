@@ -260,3 +260,39 @@ body.woocommerce-account .pm-dashboard {
 .pm-dashboard .pm-table a:hover {
     color: #d89f80 !important;
 }
+
+
+
+/* Base PM button style */
+.pm-dashboard .pm-btn,
+.pm-dashboard a.pm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #bf7d5a; /* brand */
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none !important;
+    box-shadow: 0 4px 14px rgba(191,125,90,.35);
+    transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
+}
+
+/* Small size variant used in the table */
+.pm-dashboard .pm-btn.pm-btn--sm {
+    min-width: 140px;
+    padding: 6px 12px;
+}
+
+/* Hover state */
+.pm-dashboard .pm-btn:hover,
+.pm-dashboard a.pm-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(191,125,90,.45);
+    background: #d89f80;
+}
