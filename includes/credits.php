@@ -39,9 +39,46 @@ if (!function_exists('pm_leads_opts')) {
 /** Get Woo product ID linked to a job */
 if (!function_exists('pm_leads_get_job_product_id')) {
     function pm_leads_get_job_product_id($job_id) {
-        return absint(get_post_meta($job_id, '_pm_wc_product_id', true));
+        // New key used by the dashboard / job creator
+        $pid = absint(get_post_meta($job_id, '_pm_lead_product_id', true));
+
+        // Back-compat: older builds may have used a different key
+        if (!$pid) {
+            $pid = absint(get_post_meta($job_id, '_pm_wc_product_id', true));
+        }
+        return $pid;
     }
 }
+
+/** Sync WooCommerce stock to remaining purchase capacity for a job */
+if (!function_exists('pm_leads_sync_job_stock')) {
+    function pm_leads_sync_job_stock($job_id) {
+        $product_id = pm_leads_get_job_product_id($job_id);
+        if (!$product_id || !class_exists('WC_Product')) {
+            return;
+        }
+
+        $opts   = pm_leads_opts();
+        $limit  = isset($opts['purchase_limit']) ? (int) $opts['purchase_limit'] : 5;
+        if ($limit < 1) {
+            $limit = 1;
+        }
+
+        $count      = pm_leads_get_purchase_count($job_id);
+        $remaining  = max(0, $limit - $count);
+
+        $product = wc_get_product($product_id);
+        if (!$product) {
+            return;
+        }
+
+        $product->set_manage_stock(true);
+        $product->set_stock_quantity($remaining);
+        $product->set_stock_status($remaining > 0 ? 'instock' : 'outofstock');
+        $product->save();
+    }
+}
+
 
 /** Purchase count for a job */
 if (!function_exists('pm_leads_get_purchase_count')) {
@@ -56,9 +93,16 @@ if (!function_exists('pm_leads_inc_purchase_count')) {
     function pm_leads_inc_purchase_count($job_id) {
         $c = pm_leads_get_purchase_count($job_id) + 1;
         update_post_meta($job_id, 'purchase_count', $c);
+
+        // Keep Woo stock in sync with remaining capacity
+        if (function_exists('pm_leads_sync_job_stock')) {
+            pm_leads_sync_job_stock($job_id);
+        }
+
         return $c;
     }
 }
+
 
 /** Get vendors who bought job */
 if (!function_exists('pm_leads_get_purchased_vendors')) {

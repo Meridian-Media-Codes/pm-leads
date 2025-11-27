@@ -165,8 +165,13 @@ add_action('save_post_pm_job', function ($post_id) {
     $current = sanitize_text_field($_POST['current_postcode'] ?? '');
     $new     = sanitize_text_field($_POST['new_postcode'] ?? '');
 
-    if ($current) pm_job_geocode($post_id, $current, 'pm_job_from');
+        if ($current) pm_job_geocode($post_id, $current, 'pm_job_from');
     if ($new)     pm_job_geocode($post_id, $new,     'pm_job_to');
+
+    // Keep linked Woo product stock in sync when Purchases is edited in admin
+    if (function_exists('pm_leads_sync_job_stock')) {
+        pm_leads_sync_job_stock($post_id);
+    }
 
 }, 10);
 

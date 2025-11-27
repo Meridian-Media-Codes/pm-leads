@@ -83,10 +83,13 @@ function pm_vendor_get_purchased_leads($user_id) {
 }
 
 /**
- * Handle “Buy with credits”
+ * Front-end "buy with credits" from Vendor Dashboard
  */
 add_action('template_redirect', function () {
-    if (empty($_GET['pm_buy_lead'])) return;
+
+    if (empty($_GET['pm_buy_lead'])) {
+        return;
+    }
 
     if (!is_user_logged_in()) {
         wp_safe_redirect(wp_login_url());
@@ -103,39 +106,73 @@ add_action('template_redirect', function () {
     }
 
     $user_id = get_current_user_id();
-    $opts    = pm_leads_get_options();
 
-    // Already purchased
-    $buyers = get_post_meta($job_id, 'pm_purchased_by', true);
-    if (!is_array($buyers)) $buyers = [];
-    if (in_array($user_id, $buyers, true)) {
+    // Options / purchase limit via unified helper
+    $opts  = function_exists('pm_leads_opts') ? pm_leads_opts() : ['purchase_limit' => 5];
+    $limit = isset($opts['purchase_limit']) ? (int) $opts['purchase_limit'] : 5;
+    if ($limit < 1) {
+        $limit = 1;
+    }
+
+    // Already purchased this job?
+    if (function_exists('pm_leads_vendor_has_bought') && pm_leads_vendor_has_bought($job_id, $user_id)) {
         wp_safe_redirect(add_query_arg('pm_msg', 'already', $back));
         exit;
     }
 
-    // Limit
-    $limit = intval($opts['purchase_limit'] ?? 5);
-    $count = intval(get_post_meta($job_id, 'purchase_count', true));
+    // Current purchase count / enforce limit
+    $count = function_exists('pm_leads_get_purchase_count')
+        ? pm_leads_get_purchase_count($job_id)
+        : (int) get_post_meta($job_id, 'purchase_count', true);
+
     if ($count >= $limit) {
         wp_safe_redirect(add_query_arg('pm_msg', 'soldout', $back));
         exit;
     }
 
-    // Credits
-    $bal = intval(get_user_meta($user_id, 'pm_credit_balance', true));
+    // Credits balance
+    $bal = (int) get_user_meta($user_id, 'pm_credit_balance', true);
     if ($bal < 1) {
         wp_safe_redirect(add_query_arg('pm_msg', 'nobal', $back));
         exit;
     }
 
+    // Deduct one credit
     update_user_meta($user_id, 'pm_credit_balance', max(0, $bal - 1));
+
+    // Mark as purchased and bump purchase count (this also syncs stock)
     pm_leads_mark_vendor_bought($job_id, $user_id);
-    pm_leads_inc_purchase_count($job_id);
+    $new_count = pm_leads_inc_purchase_count($job_id);
+
+    // Optional extra stock decrement for the Woo product (pm_leads_inc_purchase_count already syncs)
+    if (function_exists('pm_leads_get_job_product_id') && function_exists('pm_leads_reduce_stock')) {
+        $product_id = pm_leads_get_job_product_id($job_id);
+        if ($product_id) {
+            pm_leads_reduce_stock($product_id);
+        }
+    }
+
+    // Unified hook → existing email templates
     do_action('pm_lead_purchased_with_credits', $job_id, $user_id);
+
+    // Mark job as sold_out if limit reached
+    if ($new_count >= $limit) {
+        $term = term_exists('sold_out', 'pm_job_status');
+        if (!$term) {
+            $term = wp_insert_term('sold_out', 'pm_job_status');
+        }
+        if (!is_wp_error($term) && isset($term['term_id'])) {
+            wp_set_post_terms($job_id, [$term['term_id']], 'pm_job_status', false);
+        }
+
+        wp_safe_redirect(add_query_arg('pm_msg', 'soldout', $back));
+        exit;
+    }
 
     wp_safe_redirect(add_query_arg('pm_msg', 'ok', $back));
     exit;
 });
+
 
 /**
  * Shortcode: Vendor dashboard
