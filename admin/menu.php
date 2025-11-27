@@ -162,11 +162,11 @@ function pm_leads_render_dashboard() {
                 );
                 $actions[] = '<a class="button button-primary" href="' . esc_url($credits_link) . '">Buy with credits</a>';
 
-                $pid = pm_leads_get_job_product_id($job_id);
-                if ($pid) {
-                    $buy_now = add_query_arg(['add-to-cart'=>$pid,'quantity'=>1], home_url('/'));
-                    $actions[] = '<a class="button" href="' . esc_url($buy_now) . '">Buy now</a>';
-                }
+            //    $pid = pm_leads_get_job_product_id($job_id);
+            //    if ($pid) {
+            //        $buy_now = add_query_arg(['add-to-cart'=>$pid,'quantity'=>1], home_url('/'));
+            //        $actions[] = '<a class="button" href="' . esc_url($buy_now) . '">Buy now</a>';
+            //    }
             }
 
             echo '<tr>';
