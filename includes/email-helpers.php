@@ -80,7 +80,8 @@ function pm_leads_send_template($key, $to, $data = []) {
     if ($body === '')    $body    = ' ';
 
     add_filter('wp_mail_content_type', 'pm_leads_mail_html_type');
-    $sent = wp_mail($to, $subject, wpautop($body));
+    $body = pm_leads_render_email_template($body);
+    $sent = wp_mail($to, $subject, $body);
     remove_filter('wp_mail_content_type', 'pm_leads_mail_html_type');
 
     return $sent;
@@ -384,3 +385,33 @@ function pm_leads_maybe_warn_low_credits($vendor_id) {
 }
 
 add_action('pm_leads_vendor_approved', 'pm_leads_mark_vendor_approved');
+
+
+function pm_leads_render_email_template($content) {
+
+    $brand = '#BF7D5A';
+    $logo  = 'https://premiummoving.co.uk/wp-content/uploads/your-logo.png';
+
+    ob_start(); ?>
+    
+    <div style="background:#f5f5f5;padding:30px 0;font-family:Arial,sans-serif;">
+        <div style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;">
+            
+            <div style="background:<?php echo $brand; ?>;padding:20px;text-align:center;">
+                <img src="<?php echo $logo; ?>" style="max-width:150px;">
+            </div>
+
+            <div style="padding:30px;color:#444;font-size:16px;line-height:1.6;">
+                <?php echo wpautop($content); ?>
+            </div>
+
+            <div style="padding:15px;text-align:center;font-size:12px;color:#999;">
+                Premium Moving automated email
+            </div>
+
+        </div>
+    </div>
+
+    <?php
+    return ob_get_clean();
+}
