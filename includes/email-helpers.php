@@ -67,17 +67,17 @@ function pm_leads_send_template($key, $to, $data = []) {
     if (!$tpl['enabled'] || empty($to)) return false;
 
     $defaults = [
-        'site_name'     => get_bloginfo('name'),
-        'site_url'      => home_url(),
-        'dashboard_url' => admin_url('admin.php?page=pm-leads')
-        'vendor_dashboard_url' => home_url('/vendor-dashboard'),
-        'dashboard_link' => '<a href="' . home_url('/vendor-dashboard') . '" style="color:#BF7D5A;text-decoration:none;font-weight:600;">My Account</a>',
-
+        'site_name'             => get_bloginfo('name'),
+        'site_url'              => home_url(),
+        'dashboard_url'         => admin_url('admin.php?page=pm-leads'),
+        'vendor_dashboard_url'  => home_url('/vendor-dashboard'),
+        'dashboard_link'        => '<a href="' . home_url('/vendor-dashboard') . '" style="color:#BF7D5A;text-decoration:none;font-weight:600;">My Account</a>',
     ];
+
     $data = array_merge($defaults, $data);
 
     $subject = pm_leads_apply_merge_tags($tpl['subject'], $data);
-    $body    = pm_leads_apply_merge_tags($tpl['body'],    $data);
+    $body    = pm_leads_apply_merge_tags($tpl['body'], $data);
 
     if ($subject === '') $subject = $defaults['site_name'];
     if ($body === '')    $body    = ' ';
