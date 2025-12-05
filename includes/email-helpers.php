@@ -50,7 +50,7 @@ function pm_leads_apply_merge_tags($text, $data = []) {
 
     foreach ($data as $tag => $value) {
         // Allow safe HTML only for specific tags
-        if (in_array($tag, ['reset_button', 'login_fallback'], true)) {
+        if (in_array($tag, ['reset_button', 'login_fallback', 'dashboard_link'], true)) {
             $text = str_replace('{' . $tag . '}', $value, $text); // unescaped HTML
         } else {
             $text = str_replace('{' . $tag . '}', esc_html($value), $text);
@@ -70,6 +70,9 @@ function pm_leads_send_template($key, $to, $data = []) {
         'site_name'     => get_bloginfo('name'),
         'site_url'      => home_url(),
         'dashboard_url' => admin_url('admin.php?page=pm-leads')
+        'vendor_dashboard_url' => home_url('/vendor-dashboard'),
+        'dashboard_link' => '<a href="' . home_url('/vendor-dashboard') . '" style="color:#BF7D5A;text-decoration:none;font-weight:600;">My Account</a>',
+
     ];
     $data = array_merge($defaults, $data);
 
@@ -389,7 +392,7 @@ add_action('pm_leads_vendor_approved', 'pm_leads_mark_vendor_approved');
 
 function pm_leads_render_email_template($content) {
 
-    $brand = '#BF7D5A';
+    $brand = '#1F2933';
     $logo  = 'https://premiummoving.co.uk/wp-content/uploads/2025/11/PM-logo-Final.png';
 
     ob_start(); ?>
