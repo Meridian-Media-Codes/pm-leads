@@ -390,7 +390,7 @@ add_action('pm_leads_vendor_approved', 'pm_leads_mark_vendor_approved');
 function pm_leads_render_email_template($content) {
 
     $brand = '#BF7D5A';
-    $logo  = 'https://premiummoving.co.uk/wp-content/uploads/your-logo.png';
+    $logo  = 'https://premiummoving.co.uk/wp-content/uploads/2025/11/PM-logo-Final.png';
 
     ob_start(); ?>
     
