@@ -138,6 +138,7 @@ function pm_leads_render_email_settings() {
         'low_credits_vendor',
         'vendor_approved_vendor',
         'vendor_application_received', // ✅ new tab
+        'auto_customer_confirmation',
     ];
 
     $sub = isset($_GET['email_tab']) ? sanitize_key($_GET['email_tab']) : 'new_lead_customer';
@@ -165,7 +166,8 @@ function pm_leads_render_email_settings() {
     $make('credits_purchased_vendor', 'Credits Purchased → Vendor');
     $make('low_credits_vendor',       'Low Credits → Vendor');
     $make('vendor_approved_vendor',   'Vendor Approved → Vendor');
-    $make('vendor_application_received','Vendor application received'); // ✅ new tab label
+    $make('vendor_application_received','Vendor application received'); 
+    $make('auto_customer_confirmation', 'Auto Reply → Customer'); 
     echo '</h2>';
 
     echo '<div style="padding:20px;background:#fff;border:1px solid #ddd;border-top:none;">';
@@ -178,6 +180,8 @@ function pm_leads_render_email_settings() {
         case 'low_credits_vendor':            pm_leads_template_editor('low_credits_vendor','Low Credits → Vendor'); break;
         case 'vendor_approved_vendor':        pm_leads_template_editor('vendor_approved_vendor','Vendor Approved → Vendor'); break;
         case 'vendor_application_received':   pm_leads_template_editor('vendor_application_received','Vendor application received'); break; // ✅ new editor
+        case 'auto_customer_confirmation':    pm_leads_template_editor('auto_customer_confirmation', 'Auto Reply → Customer'); break;
+
     }
     echo '</div></div>';
 }

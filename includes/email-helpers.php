@@ -278,6 +278,19 @@ add_action('pm_lead_created', function ($job_id) {
     }
 });
 
+add_action('pm_lead_created', function($job_id) {
+    $data = pm_leads_build_job_tags($job_id, 0);
+
+    if (!empty($data['customer_email'])) {
+        pm_leads_send_template(
+            'auto_customer_confirmation', // NEW EMAIL KEY
+            $data['customer_email'],
+            $data
+        );
+    }
+});
+
+
 
 /** Woo credits purchase */
 add_action('woocommerce_order_status_completed', function ($order_id) {
