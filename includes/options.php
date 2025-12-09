@@ -11,6 +11,7 @@ function pm_leads_default_options() {
         'emails_enabled'   => 1,
         'page_vendor_dash' => 0,
         'page_lead_form'   => 0,
+        'vendor_approval_free_credits' => 0,
     ];
 }
 
@@ -33,8 +34,32 @@ function pm_leads_register_settings() {
     add_settings_field('purchase_limit', __('Default lead purchase limit', 'pm-leads'), 'pm_leads_field_limit', 'pm_leads_settings', 'pm_leads_general');
     add_settings_field('default_radius', __('Default search radius (miles)', 'pm-leads'), 'pm_leads_field_radius', 'pm_leads_settings', 'pm_leads_general');
     add_settings_field('google_api_key', __('Google Maps API key', 'pm-leads'), 'pm_leads_field_api', 'pm_leads_settings', 'pm_leads_general');
+    add_settings_field(
+    'vendor_approval_free_credits_header',
+    '<strong>New Vendor Credits</strong>',
+    function() { echo '<hr>'; },
+    'pm_leads_settings',
+    'pm_leads_general'
+);
+
+add_settings_field(
+    'vendor_approval_free_credits',
+    __('Credits on vendor approval', 'pm-leads'),
+    'pm_leads_field_vendor_free_credits',
+    'pm_leads_settings',
+    'pm_leads_general'
+);
+
 }
 add_action('admin_init', 'pm_leads_register_settings');
+
+
+function pm_leads_field_vendor_free_credits() {
+    $o = pm_leads_get_options();
+    echo '<input type="number" min="0" name="pm_leads_options[vendor_approval_free_credits]" value="' . esc_attr($o['vendor_approval_free_credits']) . '" class="small-text" />';
+    echo '<p class="description">Number of credits automatically added when a vendor is approved. Leave blank or set to 0 for no free credits.</p>';
+}
+
 
 function pm_leads_sanitize_options($input) {
     $out = pm_leads_get_options();
@@ -42,6 +67,10 @@ function pm_leads_sanitize_options($input) {
     $out['purchase_limit'] = isset($input['purchase_limit']) ? absint($input['purchase_limit']) : $out['purchase_limit'];
     $out['default_radius'] = isset($input['default_radius']) ? absint($input['default_radius']) : $out['default_radius'];
     $out['google_api_key'] = isset($input['google_api_key']) ? sanitize_text_field($input['google_api_key']) : $out['google_api_key'];
+    $out['vendor_approval_free_credits'] = isset($input['vendor_approval_free_credits'])
+    ? absint($input['vendor_approval_free_credits'])
+    : 0;
+
     return $out;
 }
 

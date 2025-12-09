@@ -323,6 +323,19 @@ function pm_leads_mark_vendor_approved($vendor_id) {
     if (get_transient('pm_vendor_approved_' . $vendor_id)) return;
     set_transient('pm_vendor_approved_' . $vendor_id, 1, 5 * MINUTE_IN_SECONDS);
 
+
+    // NEW — Apply free credits from settings
+$opts = pm_leads_get_options();
+$free = isset($opts['vendor_approval_free_credits'])
+    ? intval($opts['vendor_approval_free_credits'])
+    : 0;
+
+if ($free > 0) {
+    $current = (int) get_user_meta($vendor_id, 'pm_credit_balance', true);
+    update_user_meta($vendor_id, 'pm_credit_balance', $current + $free);
+}
+
+
     $u = get_user_by('id', $vendor_id);
     if (!$u) return;
 
