@@ -431,7 +431,7 @@ function pm_leads_render_email_template($content) {
             </div>
 
             <div style="padding:30px;color:#444;font-size:16px;line-height:1.6;">
-                <?php echo nl2br($content); ?>
+                <?php echo $content; ?>
             </div>
 
             <div style="padding:15px;text-align:center;font-size:12px;color:#999;">
