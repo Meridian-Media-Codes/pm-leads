@@ -503,11 +503,6 @@ add_action('admin_post_pm_vendor_set_status', function () {
 
     do_action('pm_vendor_status_changed', $uid, $new, $old);
 
-    if ($new === 'approved') {
-        // Let email-helpers hook handle the template send
-        do_action('pm_leads_vendor_approved', $uid);
-    }
-
     wp_safe_redirect( add_query_arg(['page'=>'pm-leads-vendors','updated'=>'1'], admin_url('admin.php')) );
     exit;
 });
