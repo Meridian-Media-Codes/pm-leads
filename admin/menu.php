@@ -420,34 +420,80 @@ function pm_leads_render_jobs() {
         return;
     }
 
-    $jobs = get_posts(['post_type'=>'pm_job','posts_per_page'=>100,'post_status'=>'any']);
-    echo '<div class="wrap"><h1>Jobs</h1><table class="widefat striped"><thead><tr>';
-    echo '<th>ID</th><th>From</th><th>To</th><th>Status</th><th>Purchases</th><th>Linked product</th>';
-    echo '</tr></thead><tbody>';
+        $jobs = get_posts([
+        'post_type'      => 'pm_job',
+        'posts_per_page' => 200,
+        'post_status'    => 'any'
+        ]);
+
+        echo '<div class="wrap"><h1>Jobs</h1>';
+
+        echo '<form method="post" action="' . admin_url('admin-post.php?action=pm_bulk_delete_jobs') . '">';
+        wp_nonce_field('pm_bulk_delete_jobs');
+
+        echo '<table class="widefat striped">
+        <thead>
+        <tr>
+            <th style="width:30px;"><input type="checkbox" id="pm-check-all"></th>
+            <th>ID</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Status</th>
+            <th>Purchases</th>
+            <th>Linked product</th>
+            <th>Delete</th>
+        </tr>
+        </thead>
+        <tbody>';
+
 
     if ($jobs) {
-        foreach ($jobs as $j) {
-            $view_url  = admin_url('admin.php?page=pm-leads-jobs&job_id=' . intval($j->ID));
-            $from      = get_post_meta($j->ID,'current_postcode',true);
-            $to        = get_post_meta($j->ID,'new_postcode',true);
-            $purchases = pm_leads_get_purchase_count($j->ID);
-            $status_terms = wp_get_post_terms($j->ID,'pm_job_status',['fields'=>'names']);
-            $status = $status_terms ? implode(', ',$status_terms) : 'available';
-            $pid = pm_leads_get_job_product_id($j->ID);
+    foreach ($jobs as $j) {
 
-            echo '<tr>';
-            echo '<td><a href="'.esc_url($view_url).'">#'.intval($j->ID).'</a></td>';
-            echo '<td><a href="'.esc_url($view_url).'">'.esc_html($from).'</a></td>';
-            echo '<td><a href="'.esc_url($view_url).'">'.esc_html($to).'</a></td>';
-            echo '<td>'.esc_html($status).'</td>';
-            echo '<td>'.esc_html((int)$purchases).'</td>';
-            echo '<td>'.($pid ? ('#'.intval($pid)) : '<em>—</em>').'</td>';
-            echo '</tr>';
+        $view_url  = admin_url('admin.php?page=pm-leads-jobs&job_id=' . intval($j->ID));
+        $from      = get_post_meta($j->ID,'current_postcode',true);
+        $to        = get_post_meta($j->ID,'new_postcode',true);
+        $purchases = pm_leads_get_purchase_count($j->ID);
+        $status_terms = wp_get_post_terms($j->ID,'pm_job_status',['fields'=>'names']);
+        $status = $status_terms ? implode(', ',$status_terms) : 'available';
+        $pid = pm_leads_get_job_product_id($j->ID);
+
+        $delete_url = wp_nonce_url(
+            admin_url('admin-post.php?action=pm_delete_job&job_id=' . intval($j->ID)),
+            'pm_delete_job_' . $j->ID
+        );
+
+        echo '<tr>';
+        echo '<td><input type="checkbox" name="pm_jobs[]" value="' . intval($j->ID) . '"></td>';
+        echo '<td><a href="'.esc_url($view_url).'">#'.intval($j->ID).'</a></td>';
+        echo '<td><a href="'.esc_url($view_url).'">'.esc_html($from).'</a></td>';
+        echo '<td><a href="'.esc_url($view_url).'">'.esc_html($to).'</a></td>';
+        echo '<td>'.esc_html($status).'</td>';
+        echo '<td>'.esc_html((int)$purchases).'</td>';
+        echo '<td>'.($pid ? ('#'.intval($pid)) : '<em>—</em>').'</td>';
+        echo '<td><a class="button delete-button" href="' . esc_url($delete_url) . '" onclick="return confirm(\'Delete this job?\');">Delete</a></td>';
+        echo '</tr>';
         }
     } else {
-        echo '<tr><td colspan="6">No jobs yet.</td></tr>';
+        echo '<tr><td colspan="8">No jobs found.</td></tr>';
     }
-    echo '</tbody></table></div>';
+
+echo '</tbody></table>';
+
+echo '<p><button type="submit" class="button button-secondary" onclick="return confirm(\'Delete selected jobs?\');">Delete selected</button></p>';
+
+echo "
+<script>
+document.getElementById('pm-check-all').addEventListener('change', function(e){
+    const boxes = document.querySelectorAll('input[name=\"pm_jobs[]\"]');
+    boxes.forEach(b => b.checked = e.target.checked);
+});
+</script>
+";
+
+
+echo '</form></div>';
+
 
     
 }
@@ -506,3 +552,40 @@ add_action('admin_post_pm_vendor_set_status', function () {
     wp_safe_redirect( add_query_arg(['page'=>'pm-leads-vendors','updated'=>'1'], admin_url('admin.php')) );
     exit;
 });
+
+
+add_action('admin_post_pm_delete_job', function () {
+    if (!current_user_can('manage_options')) wp_die('No permission');
+
+    $job_id = isset($_GET['job_id']) ? absint($_GET['job_id']) : 0;
+    $nonce  = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
+
+    if (!$job_id || !wp_verify_nonce($nonce, 'pm_delete_job_' . $job_id)) {
+        wp_die('Invalid request');
+    }
+
+    wp_delete_post($job_id, true);
+
+    wp_safe_redirect(admin_url('admin.php?page=pm-leads-jobs&deleted=1'));
+    exit;
+});
+
+
+add_action('admin_post_pm_bulk_delete_jobs', function () {
+    if (!current_user_can('manage_options')) wp_die('No permission');
+
+    if (empty($_POST['pm_jobs']) || !is_array($_POST['pm_jobs'])) {
+        wp_safe_redirect(admin_url('admin.php?page=pm-leads-jobs&none=1'));
+        exit;
+    }
+
+    check_admin_referer('pm_bulk_delete_jobs');
+
+    foreach ($_POST['pm_jobs'] as $job_id) {
+        wp_delete_post(absint($job_id), true);
+    }
+
+    wp_safe_redirect(admin_url('admin.php?page=pm-leads-jobs&bulk_deleted=1'));
+    exit;
+});
+
