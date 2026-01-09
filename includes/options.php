@@ -12,6 +12,7 @@ function pm_leads_default_options() {
         'page_vendor_dash' => 0,
         'page_lead_form'   => 0,
         'vendor_approval_free_credits' => 0,
+        'notify_admin_email' => '',
     ];
 }
 
@@ -35,12 +36,21 @@ function pm_leads_register_settings() {
     add_settings_field('default_radius', __('Default search radius (miles)', 'pm-leads'), 'pm_leads_field_radius', 'pm_leads_settings', 'pm_leads_general');
     add_settings_field('google_api_key', __('Google Maps API key', 'pm-leads'), 'pm_leads_field_api', 'pm_leads_settings', 'pm_leads_general');
     add_settings_field(
+    'notify_admin_email',
+    __('Notification email address', 'pm-leads'),
+    'pm_leads_field_notify_admin_email',
+    'pm_leads_settings',
+    'pm_leads_general'
+);
+    add_settings_field(
     'vendor_approval_free_credits_header',
     '<strong>New Vendor Credits</strong>',
     function() { echo '<hr>'; },
     'pm_leads_settings',
     'pm_leads_general'
 );
+
+
 
 add_settings_field(
     'vendor_approval_free_credits',
@@ -70,6 +80,10 @@ function pm_leads_sanitize_options($input) {
     $out['vendor_approval_free_credits'] = isset($input['vendor_approval_free_credits'])
     ? absint($input['vendor_approval_free_credits'])
     : 0;
+    $out['notify_admin_email'] = isset($input['notify_admin_email'])
+    ? sanitize_email($input['notify_admin_email'])
+    : '';
+
 
     return $out;
 }
@@ -92,4 +106,10 @@ function pm_leads_field_api() {
     echo '<input type="password" name="pm_leads_options[google_api_key]" value="' . esc_attr($o['google_api_key']) . '" class="regular-text" autocomplete="off" />';
     echo '<p class="description">Used for geocoding and distance calculations. The key is hidden for security.</p>';
 }
+function pm_leads_field_notify_admin_email() {
+    $o = pm_leads_get_options();
+    echo '<input type="email" name="pm_leads_options[notify_admin_email]" value="' . esc_attr($o['notify_admin_email'] ?? '') . '" class="regular-text" />';
+    echo '<p class="description">Where admin notifications are sent. Leave blank to disable admin emails.</p>';
+}
+
 

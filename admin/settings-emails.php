@@ -37,6 +37,9 @@ function pm_leads_allowed_merge_tags($key) {
         case 'low_credits_vendor':              return array_merge($vendor, ['{low_credit_threshold}'], $site);
         case 'vendor_approved_vendor':          return array_merge($vendor, $site);
         case 'vendor_application_received':     return array_merge($vendor, $site);
+        case 'new_lead_admin':                return array_merge($customer, $job_misc, $site);
+        case 'vendor_application_admin':      return array_merge($vendor, $site);
+
         default:                                return $site;
     }
 }
@@ -139,6 +142,9 @@ function pm_leads_render_email_settings() {
         'vendor_approved_vendor',
         'vendor_application_received', // ✅ new tab
         'auto_customer_confirmation',
+        'new_lead_admin',
+        'vendor_application_admin',
+
     ];
 
     $sub = isset($_GET['email_tab']) ? sanitize_key($_GET['email_tab']) : 'new_lead_customer';
@@ -168,6 +174,9 @@ function pm_leads_render_email_settings() {
     $make('vendor_approved_vendor',   'Vendor Approved → Vendor');
     $make('vendor_application_received','Vendor application received'); 
     $make('auto_customer_confirmation', 'Auto Reply → Customer'); 
+    $make('new_lead_admin',           'New Lead → Admin');
+    $make('vendor_application_admin', 'Vendor application → Admin');
+
     echo '</h2>';
 
     echo '<div style="padding:20px;background:#fff;border:1px solid #ddd;border-top:none;">';
@@ -181,6 +190,9 @@ function pm_leads_render_email_settings() {
         case 'vendor_approved_vendor':        pm_leads_template_editor('vendor_approved_vendor','Vendor Approved → Vendor'); break;
         case 'vendor_application_received':   pm_leads_template_editor('vendor_application_received','Vendor application received'); break; // ✅ new editor
         case 'auto_customer_confirmation':    pm_leads_template_editor('auto_customer_confirmation', 'Auto Reply → Customer'); break;
+    case 'new_lead_admin':                    pm_leads_template_editor('new_lead_admin','New Lead → Admin'); break;
+        case 'vendor_application_admin':      pm_leads_template_editor('vendor_application_admin','Vendor application → Admin'); break;
+
 
     }
     echo '</div></div>';

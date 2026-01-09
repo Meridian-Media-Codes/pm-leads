@@ -8,6 +8,8 @@ if (!defined('ABSPATH')) exit;
 const PM_LEADS_EMAIL_OPT = 'pm_leads_emails';
 
 
+
+
 if (!function_exists('pm_vendor_is_approved')) {
     require_once plugin_dir_path(__FILE__) . 'vendor-status.php';
 }
@@ -41,6 +43,14 @@ function pm_leads_save_email_template($key, $data) {
     update_option(PM_LEADS_EMAIL_OPT, $all, false);
 }
 
+function pm_leads_get_notify_admin_email() {
+    if (!function_exists('pm_leads_get_options')) return '';
+    $opts = pm_leads_get_options();
+    $email = isset($opts['notify_admin_email']) ? sanitize_email($opts['notify_admin_email']) : '';
+    return $email;
+}
+
+
 /* ---------------------------------------------
    Compose + send
 --------------------------------------------- */
@@ -72,6 +82,7 @@ function pm_leads_send_template($key, $to, $data = []) {
         'dashboard_url'         => admin_url('admin.php?page=pm-leads'),
         'vendor_dashboard_url'  => home_url('/vendor-dashboard'),
         'dashboard_link'        => '<a href="' . home_url('/vendor-dashboard') . '" style="color:#BF7D5A;text-decoration:none;font-weight:600;">My Account</a>',
+        'admin_email'           => get_option('admin_email'),
     ];
 
     $data = array_merge($defaults, $data);
@@ -185,18 +196,51 @@ add_action('pm_vendor_application_received', function($vendor_id) {
 
     if (!$vendor_id) return;
 
-    $email = get_userdata($vendor_id)->user_email;
+    $u = get_user_by('id', $vendor_id);
+    if (!$u) return;
+
+    $email = $u->user_email;
     if (!$email) return;
 
     pm_leads_send_template(
         'vendor_application_received',
         $email,
         [
-            'email'       => $email,
-            'admin_email' => get_option('admin_email')
+            'vendor_name'           => $u->display_name,
+            'vendor_email'          => $email,
+            'vendor_company'        => get_user_meta($vendor_id, 'company_name', true),
+            'vendor_phone'          => get_user_meta($vendor_id, 'contact_number', true),
+            'vendor_service_radius' => get_user_meta($vendor_id, 'service_radius', true),
+            'admin_email'           => get_option('admin_email'),
         ]
     );
 });
+
+
+add_action('pm_vendor_application_received', function($vendor_id) {
+
+    $to = pm_leads_get_notify_admin_email();
+    if (!$to) return;
+
+    if (!$vendor_id) return;
+
+    $u = get_user_by('id', $vendor_id);
+    if (!$u) return;
+
+    pm_leads_send_template(
+        'vendor_application_admin',
+        $to,
+        [
+            'vendor_name'    => $u->display_name,
+            'vendor_email'   => $u->user_email,
+            'vendor_company' => get_user_meta($vendor_id, 'company_name', true),
+            'vendor_phone'   => get_user_meta($vendor_id, 'contact_number', true),
+            'vendor_service_radius' => get_user_meta($vendor_id, 'service_radius', true),
+        ]
+    );
+
+}, 20, 1);
+
 
 
 
@@ -444,3 +488,18 @@ function pm_leads_render_email_template($content) {
     <?php
     return ob_get_clean();
 }
+
+add_action('pm_lead_created', function ($job_id) {
+
+    $to = pm_leads_get_notify_admin_email();
+    if (!$to) return;
+
+    $data = pm_leads_build_job_tags($job_id, 0);
+
+    pm_leads_send_template(
+        'new_lead_admin',
+        $to,
+        $data
+    );
+
+}, 20, 1);
