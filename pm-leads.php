@@ -78,9 +78,14 @@ add_action('wp_enqueue_scripts', function () {
 
 
 add_action('wp_footer', function () {
-  if ( is_user_logged_in() ) {
-    $logout_url = wp_logout_url( home_url('/') );
-    echo '<script>window.MM_LOGOUT_URL = ' . wp_json_encode($logout_url) . ';</script>';
-  }
+  if ( ! is_user_logged_in() ) return;
+
+  $logout_url = wp_logout_url( home_url('/') );
+
+  // Make sure the URL is not HTML entity encoded.
+  $logout_url = html_entity_decode( $logout_url, ENT_QUOTES, 'UTF-8' );
+
+  echo '<script>window.MM_LOGOUT_URL = ' . wp_json_encode( $logout_url ) . ';</script>';
 }, 20);
+
 
