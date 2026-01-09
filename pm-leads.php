@@ -77,4 +77,10 @@ add_action('wp_enqueue_scripts', function () {
 }, 20);
 
 
+add_action('wp_footer', function () {
+  if ( is_user_logged_in() ) {
+    $logout_url = wp_logout_url( home_url('/') );
+    echo '<script>window.MM_LOGOUT_URL = ' . wp_json_encode($logout_url) . ';</script>';
+  }
+}, 20);
 
