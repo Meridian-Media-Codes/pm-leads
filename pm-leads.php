@@ -82,10 +82,12 @@ add_action('wp_footer', function () {
 
   $logout_url = wp_logout_url( home_url('/') );
 
-  // Make sure the URL is not HTML entity encoded.
+  // Decode entities and also force & separators
   $logout_url = html_entity_decode( $logout_url, ENT_QUOTES, 'UTF-8' );
+  $logout_url = str_replace( '&amp;', '&', $logout_url );
 
   echo '<script>window.MM_LOGOUT_URL = ' . wp_json_encode( $logout_url ) . ';</script>';
 }, 20);
+
 
 
