@@ -60,7 +60,7 @@ function pm_leads_apply_merge_tags($text, $data = []) {
 
     foreach ($data as $tag => $value) {
         // Allow safe HTML only for specific tags
-        if (in_array($tag, ['reset_button', 'login_fallback', 'dashboard_link'], true)) {
+        if (in_array($tag, ['reset_button', 'login_fallback', 'dashboard_link', 'admin_dashboard_button'], true)) {
             $text = str_replace('{' . $tag . '}', $value, $text); // unescaped HTML
         } else {
             $text = str_replace('{' . $tag . '}', esc_html($value), $text);
@@ -84,6 +84,27 @@ function pm_leads_send_template($key, $to, $data = []) {
         'dashboard_link'        => '<a href="' . home_url('/vendor-dashboard') . '" style="color:#BF7D5A;text-decoration:none;font-weight:600;">My Account</a>',
         'admin_email'           => get_option('admin_email'),
     ];
+
+    $defaults['admin_dashboard_button'] = '
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:25px auto;text-align:center;">
+    <tr>
+        <td>
+            <a href="' . esc_url(admin_url('admin.php?page=pm-leads-vendors')) . '"
+               style="background-color:#C68960;
+                      color:#ffffff;
+                      font-family:Arial,sans-serif;
+                      font-size:15px;
+                      font-weight:600;
+                      text-decoration:none;
+                      padding:10px 22px;
+                      border-radius:6px;
+                      display:inline-block;">
+                Review vendor application
+            </a>
+        </td>
+    </tr>
+</table>';
+
 
     $data = array_merge($defaults, $data);
 
